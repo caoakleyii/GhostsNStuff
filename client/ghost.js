@@ -2,7 +2,7 @@ Ghost = function() {
   var ghostIdleFrames = [];
 
   for (var i =0; i < 6; i++) {
-    ghostIdleFrames.push(PIXI.Texture.fromFrame('ghost (Layer 1) ' + i + '.aseprite'));
+    ghostIdleFrames.push(PIXI.Texture.fromFrame('ghost (Idle Ghost) ' + i + '.aseprite'));
   }
 
   var ghostWalkingRight = [];
@@ -17,23 +17,35 @@ Ghost = function() {
     ghostWalkingLeft.push(PIXI.Texture.fromFrame('ghost (Walking Left) '+ i +'.aseprite'));
   }
 
+  var ghostWalkingUp = [];
+
+  for (var i =0; i< 6; i++) {
+    ghostWalkingUp.push(PIXI.Texture.fromFrame('ghost (Walking Up) '+ i +'.aseprite'));
+  }
+
+  var ghostWalkingDown = [];
+
+  for (var i =0; i< 6; i++) {
+    ghostWalkingDown.push(PIXI.Texture.fromFrame('ghost (Walking Down) '+ i +'.aseprite'));
+  }
+
   var sequences = {
     "idling": ghostIdleFrames,
     "walkingRight" : ghostWalkingRight,
-    "walkingLeft" : ghostWalkingLeft
+    "walkingLeft" : ghostWalkingLeft,
+    "walkingUp" : ghostWalkingUp,
+    "walkingDown" : ghostWalkingDown
   };
   this.state = new State();
   this.sprite = new PIXI.AnimatedSprite(sequences);
-  this.sprite.position.x = 50;
-  this.sprite.position.y = 50;
   this.sprite.frameRate = 2;
-  this.sprite.onComplete = ghostCompletedSequence;
+  this.sprite.onComplete = this.ghostCompletedSequence;
   this.sprite.loop = true;
   this.sprite.play();
   this.speed = 2;
 
-}
+};
 
-ghostCompletedSequence = function(sprite, completed){
+Ghost.prototype.ghostCompletedSequence = function(sprite, completed){
     // sprite.gotoAndPlay("idle");
   };
