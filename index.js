@@ -86,4 +86,4 @@ io.on('connection', function(socket) {
     players[socket.id].character.x = data.x;
     players[socket.id].character.y = data.y;
   });
-})
+});

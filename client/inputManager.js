@@ -91,7 +91,7 @@ InputManager.prototype.readInput = function() {
         this.character.sprite.gotoAndPlay("idling");
       }
     }
-}
+};
 
 var keysDown = [];
 

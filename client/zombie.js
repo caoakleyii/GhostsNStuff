@@ -7,14 +7,14 @@ Zombie = function() {
 
   var zombieWalkingLeft = [];
 
-  for(var i =0; i < 6; i++) {
+  for(i =0; i < 6; i++) {
     zombieWalkingLeft.push(PIXI.Texture.fromFrame("zombie (Walking Left) " + i + '.ase'));
   }
 
 
   var zombieWalkingRight = [];
 
-  for(var i =0; i < 6; i++) {
+  for(i =0; i < 6; i++) {
     zombieWalkingRight.push(PIXI.Texture.fromFrame("zombie (Walking Right) " + i + '.ase'));
   }
 
@@ -30,7 +30,7 @@ Zombie = function() {
   this.sprite.loop = true;
   this.sprite.play();
   this.speed = 2;
-}
+};
 
 Zombie.prototype.zombieCompletedSequence = function(sprite, completed) {
 

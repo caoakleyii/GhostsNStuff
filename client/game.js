@@ -22,10 +22,10 @@ $(document).ready(function() {
     var p = players[data.playerId];
     if(!p) {
       joinedPlayer = new Player();
-      if (data.characterType = character.Types.Ghost) {
+      if (data.characterType == character.Types.Ghost) {
         joinedPlayer.character = new Ghost();
       }
-      if (data.characterType = character.Types.Zombie) {
+      if (data.characterType == character.Types.Zombie) {
         joinedPlayer.character = new Zombie();
       }
       joinedPlayer.character.sprite.x = data.x;
