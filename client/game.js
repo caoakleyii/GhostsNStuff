@@ -3,6 +3,7 @@ $(document).ready(function() {
   var dataCreate = require('../core/data.create');
   var dataUpdate = require('../core/data.update');
   var character = require('../core/character');
+  var map = require('../core/gameWorld');
 
   var renderer = new PIXI.CanvasRenderer(1024, 768, { autoResize : true, backgroundColor : 0x99FF00  });
 
@@ -14,6 +15,9 @@ $(document).ready(function() {
 
   var player;
   var joinedPlayer;
+  var foregroundGameWorld;
+  var backgroundGameWorld;
+
 
   socket.on('PlayerJoined', function(msg) {
     // create OTHER player class
@@ -22,16 +26,17 @@ $(document).ready(function() {
     var p = players[data.playerId];
     if(!p) {
       joinedPlayer = new Player();
+      if (data.characterType == character.Types.Human) {
+        joinedPlayer.character = new Human();
+      }
       if (data.characterType == character.Types.Ghost) {
         joinedPlayer.character = new Ghost();
-      }
-      if (data.characterType == character.Types.Zombie) {
-        joinedPlayer.character = new Zombie();
       }
       joinedPlayer.character.sprite.x = data.x;
       joinedPlayer.character.sprite.y = data.y;
       players[data.playerId] = joinedPlayer;
       stage.addChild(joinedPlayer.character.sprite);
+      stage.addChild(joinedPlayer.character.healthBar);
     }
   });
 
@@ -42,6 +47,7 @@ $(document).ready(function() {
     player.character.sprite.x = data.x;
     player.character.sprite.y = data.y;
     stage.addChild(player.character.sprite);
+    stage.addChild(player.character.healthBar);
   });
 
   socket.on('GameLoop', function(msg) {
@@ -51,10 +57,12 @@ $(document).ready(function() {
     if (p) {
       p.character.sprite.x = data.x;
       p.character.sprite.y = data.y;
+      if (p.character.sprite.currentSequence  != data.currentSequence) {
+        p.character.sprite.gotoAndPlay(data.currentSequence);
+      }
       players[data.playerId] = p;
     } else if (player && player.id && data.playerId != player.id) {
       // ask for player creation
-
       dataCreate.playerId = data.playerId;
       msg = dataCreate.encode();
       socket.emit('MissingPlayer', msg);
@@ -63,51 +71,73 @@ $(document).ready(function() {
   });
 
   PIXI.loader
+      .add('assets/playerIdlingUp.json')
+      .add('assets/playerIdlingDown.json')
+      .add('assets/playerIdlingLeft.json')
+      .add('assets/playerIdlingRight.json')
+      .add('assets/playerWalkingUp.json')
+      .add('assets/playerWalkingDown.json')
+      .add('assets/playerWalkingLeft.json')
+      .add('assets/playerWalkingRight.json')
+      .add('assets/playerSwingingUp.json')
+      .add('assets/playerSwingingDown.json')
+      .add('assets/playerSwingingLeft.json')
+      .add('assets/playerSwingingRight.json')
       .add('assets/ghostIdle.json')
       .add('assets/ghostWalkingRight.json')
       .add('assets/ghostWalkingLeft.json')
       .add('assets/ghostWalkingUp.json')
       .add('assets/ghostWalkingDown.json')
-      .add('assets/zombieIdling.json')
-      .add('assets/zombieWalkingRight.json')
-      .add('assets/zombieWalkingLeft.json')
       .load(onAssetsLoaded);
 
+
+
   function onAssetsLoaded(){
-    // showe GUI
+    var backgroundGameWorldTexture = new PIXI.Texture.fromImage('images/backgroundGameWorld.png');
+    backgroundGameWorld = new PIXI.Sprite(backgroundGameWorldTexture);
+    stage.addChild(backgroundGameWorld);
+
+    var foregroundGameWorldTexture = new PIXI.Texture.fromImage('images/foregroundGameWorld.png');
+    foregroundGameWorld = new PIXI.Sprite(foregroundGameWorldTexture);
+    stage.addChild(foregroundGameWorld);
+
     userSelectedCharacter();
     animate();
   }
 
   function animate() {
     player.character.sprite.advanceTime(1/60);
+    player.character.drawUpdate();
     for(var id in players) {
       var p  = players[id];
       if (p) {
         p.character.sprite.advanceTime(1/60);
+        p.character.drawUpdate();
       }
     }
     player.inputHandler.readInput();
     sendUpdatePlayer();
     renderer.render(stage);
     requestAnimationFrame(animate);
+
+    stage.setChildIndex(foregroundGameWorld, stage.children.length - 1);
   }
 
   function sendUpdatePlayer(){
     // msg [msgType(update), (x), (y)]
     dataUpdate.x = player.character.sprite.x;
     dataUpdate.y = player.character.sprite.y;
+    dataUpdate.currentSequence = player.character.sprite.currentSequence;
     var msg = dataUpdate.encode();
     socket.emit('UpdateServerPlayer', msg);
   }
 
   function userSelectedCharacter() {
-    player = new Player(new Ghost());
-    dataCreate.characterType = character.Types.Ghost;
+    player = new Player(new Human());
+    player.character.backgroundGameWorld = backgroundGameWorld;
+    player.character.foregroundGameWorld = foregroundGameWorld;
+    dataCreate.characterType = character.Types.Human;
     var msg = dataCreate.encode();
-
     socket.emit('CreatePlayer', msg);
   }
-
-
 });

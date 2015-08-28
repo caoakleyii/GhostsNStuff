@@ -7,7 +7,9 @@ var dataUtil = require('./core/data.util');
 var dataCreate = require('./core/data.create');
 var dataUpdate = require('./core/data.update');
 var Player = require('./server/player');
-var Ghost = require('./server/ghost');
+var Human = require('./server/human');
+
+var character = require('./core/character');
 
 // create static content folder public
 app.use(express.static('public'));
@@ -34,6 +36,7 @@ gameLoop = function(){
     dataUpdate.playerId = p.id;
     dataUpdate.x = p.character.x;
     dataUpdate.y = p.character.y;
+    dataUpdate.currentSequence = p.character.currentSequence;
     var msg = dataUpdate.encode();
 
     // send data
@@ -48,17 +51,27 @@ setInterval(gameLoop, interval);
 io.on('connection', function(socket) {
   console.log(socket.id + ' user connected');
   // need to push 1 to add to the array length/count. though we don't really use that to access the player.
-  players[socket.id] = new Player(socket.id, new Ghost());
+
 
   socket.on('CreatePlayer', function(msg) {
-    // msg [Message Type(create), (playerId), Character Type, X, Y]
-    var x = 50;
-    var y = 50;
-    // validate messsage
+    var x = 75;
+    var y = 200;
     var createMsg = dataUtil.decode(msg);
-    createMsg.playerId = socket.id;
+    var newPlayer = new Player(socket.id);
+
+    switch(createMsg.characterType){
+        case character.Types.Human:
+        newPlayer.character = new Human();
+    }
+    newPlayer.character.x = x;
+    newPlayer.character.y = y;
+    players[newPlayer.id] = newPlayer;
+
+    createMsg.playerId = newPlayer.id;
     createMsg.x = x;
     createMsg.y = y;
+
+
     msg = createMsg.encode();
     socket.broadcast.emit('PlayerJoined', msg);
 
@@ -85,5 +98,6 @@ io.on('connection', function(socket) {
     var data = dataUtil.decode(msg);
     players[socket.id].character.x = data.x;
     players[socket.id].character.y = data.y;
+    players[socket.id].character.currentSequence = data.currentSequence;
   });
 });

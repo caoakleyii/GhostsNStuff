@@ -25,6 +25,7 @@ dataUtil.decode  = function(msg){
       dataUpdate.playerId = msg[1];
       dataUpdate.x = msg[2];
       dataUpdate.y = msg[3];
+      dataUpdate.currentSequence = msg[4];
       return dataUpdate;
   }
 };

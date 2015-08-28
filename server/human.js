@@ -1,8 +1,8 @@
 var character = require('../core/character');
 module = module.exports =
 
-Ghost = function() {
-  this.type = character.Types.Ghost;
+Human = function() {
+  this.type = character.Types.Human;
   character.call(this);
   this.x = 0;
   this.y = 0;

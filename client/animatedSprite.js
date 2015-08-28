@@ -34,6 +34,31 @@ PIXI.AnimatedSprite.prototype.gotoAndPlay=function(where){
   this.playing=true;
 }
 
+PIXI.AnimatedSprite.prototype.gotoAndPlayOnce =function(where){
+  this.loop = false;
+  if(Object.prototype.toString.call(where)=='[object String]'){
+    this.currentFrame=0;
+    this.currentSequence=where;
+  }
+  else{
+    this.currentFrame=where;
+  }
+  this.playing=true;
+}
+
+
+PIXI.AnimatedSprite.prototype.gotoAndPlayLoop =function(where){
+  this.loop = true;
+  if(Object.prototype.toString.call(where)=='[object String]'){
+    this.currentFrame=0;
+    this.currentSequence=where;
+  }
+  else{
+    this.currentFrame=where;
+  }
+  this.playing=true;
+}
+
 PIXI.AnimatedSprite.prototype.gotoAndStop=function(where){
   if(Object.prototype.toString.call(where)=='[object String]'){
     this.currentFrame=0;

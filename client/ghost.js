@@ -1,3 +1,6 @@
+var character = require('../core/character');
+var clientCharacter = require('./clientCharacter');
+
 Ghost = function() {
   var ghostIdleFrames = [];
 
@@ -29,6 +32,7 @@ Ghost = function() {
     ghostWalkingDown.push(PIXI.Texture.fromFrame('ghost (Walking Down) '+ i +'.aseprite'));
   }
 
+
   var sequences = {
     "idling": ghostIdleFrames,
     "walkingRight" : ghostWalkingRight,
@@ -36,11 +40,15 @@ Ghost = function() {
     "walkingUp" : ghostWalkingUp,
     "walkingDown" : ghostWalkingDown
   };
+
   this.state = new State();
   this.sprite = new PIXI.AnimatedSprite(sequences);
   this.sprite.frameRate = 2;
   this.sprite.onComplete = this.ghostCompletedSequence;
   this.sprite.loop = true;
+  character.call(this);
+  // has to be called after character.call because of references to hp, etc.
+  clientCharacter.call(this);
   this.sprite.play();
   this.speed = 2;
 

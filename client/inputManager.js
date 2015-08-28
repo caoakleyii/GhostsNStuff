@@ -1,5 +1,8 @@
+var Character = require('../core/character');
+
 InputManager = function(character){
   this.character = character;
+  this.onKeyDown();
 };
 
 InputManager.inputType = {
@@ -45,53 +48,88 @@ InputManager.getInputType = function(key)
 
 
 InputManager.prototype.readInput = function() {
+
+    // this will allow the charcter to walk into the correct direction based on which key's are still down,
+    // in conjuction with what key was last pressed.
+    // TODO: still needs to be fixed
     if (InputManager.inputType.Right in keysDown) {
-      if (!this.character.state.isWalkingRight) {
-        this.character.state.isWalkingRight = true;
-        this.character.sprite.gotoAndPlay("walkingRight");
-      }
-      this.character.sprite.addImpulse(this.character.speed, 0);
-    } else {
-      this.character.state.isWalkingRight = false;
+        this.character.orientation = Character.Orientation.Right;
     }
 
     if (InputManager.inputType.Left in keysDown) {
-      if (!this.character.state.isWalkingLeft) {
-        this.character.state.isWalkingLeft = true;
-        this.character.sprite.gotoAndPlay("walkingLeft");
-      }
-      this.character.sprite.addImpulse(this.character.speed * -1, 0);
-    } else {
-      this.character.state.isWalkingLeft = false;
+        this.character.orientation = Character.Orientation.Left;
     }
 
     if (InputManager.inputType.Down in keysDown) {
-      if (!this.character.state.isWalkingDown) {
-        this.character.state.isWalkingDown = true;
-        this.character.sprite.gotoAndPlay("walkingDown");
-      }
-      this.character.sprite.addImpulse(0, this.character.speed);
-    } else {
-      this.character.state.isWalkingDown = false;
+        this.character.orientation = Character.Orientation.Down;
     }
 
     if (InputManager.inputType.Up in keysDown) {
-      if (!this.character.state.isWalkingUp) {
-        this.character.state.isWalkingUp = true;
-        this.character.sprite.gotoAndPlay("walkingUp");
-      }
-      this.character.sprite.addImpulse(0, this.character.speed * -1);
-    } else {
-      this.character.state.isWalkingUp = false;
+        this.character.orientation = Character.Orientation.Up;
     }
 
-    if(keysDown.every(isKeyDownEmpty)){
-      if (!this.character.state.isIdling) {
-        this.character.state.isIdling = true;
-        this.character.sprite.gotoAndPlay("idling");
+
+    if (InputManager.inputType.Skill1 in keysDown) {
+      this.character.skill1();
+    }
+
+    if (this.character.state.isAttacking && !this.character.sprite.playing) {
+      this.character.state.isAttacking = false;
+    }
+
+    if (walkingKeysDown())
+    {
+      if (InputManager.inputType.Sprint in keysDown) {
+        this.character.run();
+      } else {
+        this.character.walk();
       }
     }
+
+
+
+    if(keysDown.every(isKeyDownEmpty)){
+      this.character.idle();
+    }
 };
+
+InputManager.prototype.onKeyDown = function() {
+  var handler = this;
+
+  $(document).keydown(function(e){
+
+    // space and arrow keys
+    // prevent them from scrolling the page
+    if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+      e.preventDefault();
+    }
+
+    var input = InputManager.getInputType(e.keyCode);
+    keysDown[input] = true;
+
+
+    // this will change the users direction on input
+    if (InputManager.inputType.Right == input) {
+        handler.character.orientation = Character.Orientation.Right;
+    }
+
+    if (InputManager.inputType.Left == input) {
+        handler.character.orientation = Character.Orientation.Left;
+    }
+
+    if (InputManager.inputType.Down == input) {
+        handler.character.orientation = Character.Orientation.Down;
+    }
+
+    if (InputManager.inputType.Up == input) {
+        handler.character.orientation = Character.Orientation.Up;
+    }
+
+  });
+
+}
+
+
 
 var keysDown = [];
 
@@ -100,18 +138,16 @@ function isKeyDownEmpty(element)
    return false;
 }
 
-$(document).keydown(function(e){
+function walkingKeysDown() {
+  if (InputManager.inputType.Up in keysDown || InputManager.inputType.Down in keysDown
+      || InputManager.inputType.Left in keysDown || InputManager.inputType.Right in keysDown)
+    {
+      return true;
+    }
+  return false;
+}
 
-	// space and arrow keys
-  // prevent them from scrolling the page
-	if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-	  e.preventDefault();
-  }
 
-  var input = InputManager.getInputType(e.keyCode);
-  keysDown[input] = true;
-
-});
 
 $(document).keyup(function(e) {
   var input = InputManager.getInputType(e.keyCode);

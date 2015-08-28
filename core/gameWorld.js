@@ -1,0 +1,148 @@
+var TileMaps = {};
+(function(name,data){
+ if(typeof onTileMapLoaded === 'undefined') {
+  if(typeof TileMaps === 'undefined') TileMaps = {};
+  TileMaps[name] = data;
+ } else {
+  onTileMapLoaded(name,data);
+ }})("gameWorld",
+{ "height":50,
+ "layers":[
+        {
+         "compression":"zlib",
+         "data":"eJztwwEJAAAMBKFL8f2jLsdAwVVTVVVVVVVVVVXV5w\/1etbZ",
+         "encoding":"base64",
+         "height":50,
+         "name":"Background",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":50,
+         "x":0,
+         "y":0
+        },
+        {
+         "compression":"zlib",
+         "data":"eJzt1DEOgzAMBdBs7cIF2i5coEzc\/2qIoQtItQekOOg96U9ebDnx3O5h7d3ARR7JPHs1mPRO5tOrwaTsHHsq72UJMspepqD+amPMMQf1UeaI7u63nd9XdNsqO+7lXyozRy2\/f5IJAAAAAAAAALEN7d8M2g==",
+         "encoding":"base64",
+         "height":50,
+         "name":"World",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":50,
+         "x":0,
+         "y":0
+        },
+        {
+         "compression":"zlib",
+         "data":"eJzt00EKgCAQAED\/\/zODnqDQT1IQ8lBWN4UZWNyVPSiuIVxyiVjiaHVdU8tjWEsa7O9hvfvc6d8H\/qjzv3X5U8\/M6vnr\/OdWj\/78zPJ7CwAAAAAAAAAAH52XVxJg",
+         "encoding":"base64",
+         "height":50,
+         "name":"Trees",
+         "opacity":1,
+         "properties":
+            {
+             "collidable":"true"
+            },
+         "type":"tilelayer",
+         "visible":true,
+         "width":50,
+         "x":0,
+         "y":0
+        },
+        {
+         "compression":"zlib",
+         "data":"eJzt0zEKgDAMBdDef\/dQKh5BxZu4FLpUVJRi63sQ\/pIhJCSEZIg5ZqomS8w1Uy358m26G70t3oYy+nD+A1OJQR6aQ\/qB\/qBnKzTLW+aYNez\/itr2DwAAAAAAAAB\/tQPmkhY2",
+         "encoding":"base64",
+         "height":50,
+         "name":"Layered Trees",
+         "opacity":1,
+         "properties":
+            {
+             "collidable":"true"
+            },
+         "type":"tilelayer",
+         "visible":true,
+         "width":50,
+         "x":0,
+         "y":0
+        },
+        {
+         "compression":"zlib",
+         "data":"eJztwQENAAAAwqD3T20ON6AAAAAAAAAAAADg3wAnEAAB",
+         "encoding":"base64",
+         "height":50,
+         "name":"Shadow",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":50,
+         "x":0,
+         "y":0
+        },
+        {
+         "compression":"zlib",
+         "data":"eJzt0wEJAAAIA0H7BzWHIQRFuUvwDBYBwGW5HfCcfaHHhwAAAAAAAIBJBXh0ArM=",
+         "encoding":"base64",
+         "height":50,
+         "name":"Barrels",
+         "opacity":1,
+         "properties":
+            {
+             "collidable":"true"
+            },
+         "type":"tilelayer",
+         "visible":true,
+         "width":50,
+         "x":0,
+         "y":0
+        },
+        {
+         "compression":"zlib",
+         "data":"eJztwQENAAAAwqD3T20ON6AAAAAAAAAAAADg3wAnEAAB",
+         "encoding":"base64",
+         "height":50,
+         "name":"Buildings",
+         "opacity":1,
+         "properties":
+            {
+             "collidable":"true"
+            },
+         "type":"tilelayer",
+         "visible":true,
+         "width":50,
+         "x":0,
+         "y":0
+        }],
+ "nextobjectid":1,
+ "orientation":"orthogonal",
+ "properties":
+    {
+
+    },
+ "renderorder":"right-down",
+ "tileheight":64,
+ "tilesets":[
+        {
+         "firstgid":1,
+         "image":"..\/..\/..\/Users\/Chris\/Desktop\/RPG pack (230 assets)\/RPG pack (230 assets)\/Spritesheet\/RPGpack_sheet.png",
+         "imageheight":832,
+         "imagewidth":1280,
+         "margin":0,
+         "name":"RPG Pack",
+         "properties":
+            {
+
+            },
+         "spacing":0,
+         "tilecount":260,
+         "tileheight":64,
+         "tilewidth":64
+        }],
+ "tilewidth":64,
+ "version":1,
+ "width":50
+});
+gameWorld = TileMaps;
+module.exports = gameWorld;

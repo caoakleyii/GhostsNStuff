@@ -1,0 +1,43 @@
+{ "frames": {
+   "Player (Swinging Down) 0.ase": {
+    "frame": { "x": 0, "y": 0, "w": 30, "h": 40 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 30, "h": 40 },
+    "sourceSize": { "w": 30, "h": 40 },
+    "duration": 100
+   },
+   "Player (Swinging Down) 1.ase": {
+    "frame": { "x": 30, "y": 0, "w": 30, "h": 40 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 30, "h": 40 },
+    "sourceSize": { "w": 30, "h": 40 },
+    "duration": 100
+   },
+   "Player (Swinging Down) 2.ase": {
+    "frame": { "x": 60, "y": 0, "w": 30, "h": 40 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 30, "h": 40 },
+    "sourceSize": { "w": 30, "h": 40 },
+    "duration": 100
+   },
+   "Player (Swinging Down) 3.ase": {
+    "frame": { "x": 90, "y": 0, "w": 30, "h": 40 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 30, "h": 40 },
+    "sourceSize": { "w": 30, "h": 40 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "http://www.aseprite.org/",
+  "version": "1.1",
+  "image": "../images/playerSwingingDown.png",
+  "format": "RGBA8888",
+  "size": { "w": 120, "h": 40 },
+  "scale": "1"
+ }
+}
