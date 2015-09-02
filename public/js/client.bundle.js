@@ -136,15 +136,99 @@ ClientCharacter = function(){
   this.healthBar.beginFill(0xFF0000)
   this.healthBar.lineStyle(1, 0xFFFFFF);
   this.healthBar
-      .drawRect(this.sprite.position.x - (this.sprite.width / 2 - 2),
-                this.sprite.position.y - 15,
-                (this.currentHP / this.totalHP) * 50,
-                5);
+  .drawRect(this.sprite.position.x - (this.sprite.width / 2 - 2),
+  this.sprite.position.y - 15,
+  (this.currentHP / this.totalHP) * 50,
+  5);
   this.drawUpdate = function(){
     this.healthBar.position.x = this.sprite.position.x - (this.sprite.width / 2 - 2);
     this.healthBar.position.y = this.sprite.position.y - 15;
     this.width = (this.currentHP / this.totalHP) * 50;
   };
+  this.client = true;
+  this.backgroundGameWorld = undefined;
+  this.foregroundGameWorld = undefined;
+
+  this.worldX = function(){
+    return this.sprite.x - this.backgroundGameWorld.x;
+  };
+  this.worldY = function(){
+    return this.sprite.y - this.backgroundGameWorld.y;
+  };
+
+  this.clientWalk = function (frameRate, speedModifier) {
+    var backgroundTransitionSpeed = (this.speed * speedModifier);
+
+    if (!this.state.isAttacking) {
+      this.sprite.frameRate = frameRate;
+
+      switch(this.orientation){
+        case Character.Orientation.Right:
+        if (this.sprite.currentSequence != "walkingRight") {
+          this.sprite.gotoAndPlayLoop("walkingRight");
+        }
+        if (this.sprite.x >= 865) {
+          this.backgroundGameWorld.addImpulse(backgroundTransitionSpeed * -1 , 0);
+          this.foregroundGameWorld.addImpulse(backgroundTransitionSpeed * -1 , 0);
+        } else {
+          this.sprite.addImpulse(this.speed * speedModifier, 0);
+        }
+        break;
+        case Character.Orientation.Left:
+        if (this.sprite.currentSequence != "walkingLeft") {
+          this.sprite.gotoAndPlayLoop("walkingLeft");
+        }
+        if (this.sprite.x <= 165) {
+          this.backgroundGameWorld.addImpulse(backgroundTransitionSpeed, 0);
+          this.foregroundGameWorld.addImpulse(backgroundTransitionSpeed, 0);
+        } else {
+          this.sprite.addImpulse((this.speed * speedModifier) * -1, 0);
+        }
+        break;
+        case Character.Orientation.Down:
+        if (this.sprite.currentSequence != "walkingDown") {
+          this.sprite.gotoAndPlayLoop("walkingDown");
+        }
+        if (this.sprite.y >= 645 ) {
+          this.backgroundGameWorld.addImpulse(0, backgroundTransitionSpeed * -1);
+          this.foregroundGameWorld.addImpulse(0, backgroundTransitionSpeed * -1);
+        } else {
+          this.sprite.addImpulse(0, this.speed * speedModifier);
+        }
+        break;
+        case Character.Orientation.Up:
+        if (this.sprite.currentSequence != "walkingUp") {
+          this.sprite.gotoAndPlayLoop("walkingUp");
+        }
+        if (this.sprite.y <= 125) {
+          this.backgroundGameWorld.addImpulse(0, backgroundTransitionSpeed);
+          this.foregroundGameWorld.addImpulse(0, backgroundTransitionSpeed);
+        } else {
+          this.sprite.addImpulse(0, (this.speed * speedModifier) * -1);
+        }
+        break;
+      }
+    }
+  };
+
+  this.idle = function(){
+    if (!this.state.isAttacking) {
+      switch(this.orientation) {
+        case Character.Orientation.Right:
+        this.sprite.gotoAndPlayLoop("idlingRight");
+        break;
+        case Character.Orientation.Left:
+        this.sprite.gotoAndPlayLoop("idlingLeft");
+        break;
+        case Character.Orientation.Up:
+        this.sprite.gotoAndPlayLoop("idlingUp");
+        break;
+        case Character.Orientation.Down:
+        this.sprite.gotoAndPlayLoop("idlingDown");
+        break;
+      }
+    }
+  }; // end of idle function
 }
 
 
@@ -190,8 +274,8 @@ $(document).ready(function() {
       if (data.characterType == character.Types.Ghost) {
         joinedPlayer.character = new Ghost();
       }
-      joinedPlayer.character.sprite.x = data.x;
-      joinedPlayer.character.sprite.y = data.y;
+      joinedPlayer.character.sprite.x = data.gameWorldX;
+      joinedPlayer.character.sprite.y = data.gameWorldY;
       players[data.playerId] = joinedPlayer;
       stage.addChild(joinedPlayer.character.sprite);
       stage.addChild(joinedPlayer.character.healthBar);
@@ -202,8 +286,8 @@ $(document).ready(function() {
     // will decode this later.
     var data = dataUtil.decode(msg);
     player.id = data.playerId;
-    player.character.sprite.x = data.x;
-    player.character.sprite.y = data.y;
+    player.character.sprite.x = data.gameWorldX;
+    player.character.sprite.y = data.gameWorldY;
     stage.addChild(player.character.sprite);
     stage.addChild(player.character.healthBar);
   });
@@ -213,8 +297,8 @@ $(document).ready(function() {
 
     var p = players[data.playerId];
     if (p) {
-      p.character.sprite.x = data.x;
-      p.character.sprite.y = data.y;
+      p.character.sprite.x = player.character.backgroundGameWorld.x + data.gameWorldX;
+      p.character.sprite.y = player.character.backgroundGameWorld.y + data.gameWorldY;
       if (p.character.sprite.currentSequence  != data.currentSequence) {
         p.character.sprite.gotoAndPlay(data.currentSequence);
       }
@@ -285,6 +369,8 @@ $(document).ready(function() {
     // msg [msgType(update), (x), (y)]
     dataUpdate.x = player.character.sprite.x;
     dataUpdate.y = player.character.sprite.y;
+    dataUpdate.gameWorldX = player.character.worldX();
+    dataUpdate.gameWorldY = player.character.worldY();
     dataUpdate.currentSequence = player.character.sprite.currentSequence;
     var msg = dataUpdate.encode();
     socket.emit('UpdateServerPlayer', msg);
@@ -500,6 +586,8 @@ var Character = require('../core/character');
 InputManager = function(character){
   this.character = character;
   this.onKeyDown();
+  this.onKeyUp();
+  this.keysDown = [];
 };
 
 InputManager.inputType = {
@@ -549,24 +637,24 @@ InputManager.prototype.readInput = function() {
     // this will allow the charcter to walk into the correct direction based on which key's are still down,
     // in conjuction with what key was last pressed.
     // TODO: still needs to be fixed
-    if (InputManager.inputType.Right in keysDown) {
+    if (InputManager.inputType.Right in this.keysDown) {
         this.character.orientation = Character.Orientation.Right;
     }
 
-    if (InputManager.inputType.Left in keysDown) {
+    if (InputManager.inputType.Left in this.keysDown) {
         this.character.orientation = Character.Orientation.Left;
     }
 
-    if (InputManager.inputType.Down in keysDown) {
+    if (InputManager.inputType.Down in this.keysDown) {
         this.character.orientation = Character.Orientation.Down;
     }
 
-    if (InputManager.inputType.Up in keysDown) {
+    if (InputManager.inputType.Up in this.keysDown) {
         this.character.orientation = Character.Orientation.Up;
     }
 
 
-    if (InputManager.inputType.Skill1 in keysDown) {
+    if (InputManager.inputType.Skill1 in this.keysDown) {
       this.character.skill1();
     }
 
@@ -574,18 +662,15 @@ InputManager.prototype.readInput = function() {
       this.character.state.isAttacking = false;
     }
 
-    if (walkingKeysDown())
-    {
-      if (InputManager.inputType.Sprint in keysDown) {
+    if (this.walkingKeysDown()) {
+      if (InputManager.inputType.Sprint in this.keysDown) {
         this.character.run();
       } else {
         this.character.walk();
       }
     }
 
-
-
-    if(keysDown.every(isKeyDownEmpty)){
+    if(this.keysDown.every(isKeyDownEmpty)){
       this.character.idle();
     }
 };
@@ -602,7 +687,7 @@ InputManager.prototype.onKeyDown = function() {
     }
 
     var input = InputManager.getInputType(e.keyCode);
-    keysDown[input] = true;
+    handler.keysDown[input] = true;
 
 
     // this will change the users direction on input
@@ -626,30 +711,28 @@ InputManager.prototype.onKeyDown = function() {
 
 }
 
+InputManager.prototype.onKeyUp = function(){
+  var handler = this;
 
+  $(document).keyup(function(e) {
+    var input = InputManager.getInputType(e.keyCode);
+    delete handler.keysDown[input];
+  });
+}
 
-var keysDown = [];
 
 function isKeyDownEmpty(element)
 {
    return false;
 }
 
-function walkingKeysDown() {
-  if (InputManager.inputType.Up in keysDown || InputManager.inputType.Down in keysDown
-      || InputManager.inputType.Left in keysDown || InputManager.inputType.Right in keysDown)
-    {
+InputManager.prototype.walkingKeysDown = function() {
+  if (InputManager.inputType.Up in this.keysDown || InputManager.inputType.Down in this.keysDown
+      || InputManager.inputType.Left in this.keysDown || InputManager.inputType.Right in this.keysDown) {
       return true;
     }
   return false;
 }
-
-
-
-$(document).keyup(function(e) {
-  var input = InputManager.getInputType(e.keyCode);
-  delete keysDown[input];
-});
 
 },{"../core/character":11}],8:[function(require,module,exports){
 var animatedSprite = require('./animatedSprite');
@@ -683,8 +766,10 @@ Character = function() {
   this.currentHP = 100;
   this.baseFrameRate = 2;
   this.speed = 2;
-  this.backgroundGameWorld = undefined;
-  this.foregroundGameWorld = undefined;
+  this.gameWorldX = 0;
+  this.gameWorldY = 0;
+
+
   this.orientation = Character.Orientation.Right;
 
   this.walk = function(frameRate, speedModifier) {
@@ -697,55 +782,21 @@ Character = function() {
       speedModifier = 1;
     }
 
-    var backgroundTransitionSpeed = (this.speed * speedModifier);
-
-    if (!this.state.isAttacking) {
-      this.sprite.frameRate = frameRate;
-
-      switch(this.orientation){
+    if (this.client) {
+      this.clientWalk(frameRate, speedModifier);
+    } else {
+      switch(this.orientation) {
         case Character.Orientation.Right:
-          if (this.sprite.currentSequence != "walkingRight") {
-            this.sprite.gotoAndPlayLoop("walkingRight");
-          }
-          if (this.sprite.x >= 865) {
-            this.backgroundGameWorld.addImpulse(backgroundTransitionSpeed * -1 , 0);
-            this.foregroundGameWorld.addImpulse(backgroundTransitionSpeed * -1 , 0);
-          } else {
-            this.sprite.addImpulse(this.speed * speedModifier, 0);
-          }
+          this.addImpulse(this.speed * speedModifier, 0);
           break;
         case Character.Orientation.Left:
-          if (this.sprite.currentSequence != "walkingLeft") {
-            this.sprite.gotoAndPlayLoop("walkingLeft");
-          }
-          if (this.sprite.x <= 165) {
-              this.backgroundGameWorld.addImpulse(backgroundTransitionSpeed, 0);
-              this.foregroundGameWorld.addImpulse(backgroundTransitionSpeed, 0);
-          } else {
-            this.sprite.addImpulse((this.speed * speedModifier) * -1, 0);
-          }
+          this.addImpulse((this.speed * speedModifier) * -1, 0);
           break;
         case Character.Orientation.Down:
-          if (this.sprite.currentSequence != "walkingDown") {
-            this.sprite.gotoAndPlayLoop("walkingDown");
-          }
-          if (this.sprite.y >= 645 ) {
-              this.backgroundGameWorld.addImpulse(0, backgroundTransitionSpeed * -1);
-              this.foregroundGameWorld.addImpulse(0, backgroundTransitionSpeed * -1);
-          } else {
-            this.sprite.addImpulse(0, this.speed * speedModifier);
-          }
+          this.addImpulse(0, this.speed * speedModifier);
           break;
         case Character.Orientation.Up:
-          if (this.sprite.currentSequence != "walkingUp") {
-            this.sprite.gotoAndPlayLoop("walkingUp");
-          }
-          if (this.sprite.y <= 125) {
-              this.backgroundGameWorld.addImpulse(0, backgroundTransitionSpeed);
-              this.foregroundGameWorld.addImpulse(0, backgroundTransitionSpeed);
-          } else {
-            this.sprite.addImpulse(0, (this.speed * speedModifier) * -1);
-          }
+          this.addImpulse(0, (this.speed * speedModifier) * -1);
           break;
       }
     }
@@ -755,29 +806,16 @@ Character = function() {
     this.walk(this.baseFrameRate * 2, this.speed * 1.1);
   }
 
-  this.idle = function(){
-    if (!this.state.isAttacking) {
-      switch(this.orientation) {
-        case Character.Orientation.Right:
-          this.sprite.gotoAndPlayLoop("idlingRight");
-          break;
-        case Character.Orientation.Left:
-          this.sprite.gotoAndPlayLoop("idlingLeft");
-          break;
-        case Character.Orientation.Up:
-          this.sprite.gotoAndPlayLoop("idlingUp");
-          break;
-        case Character.Orientation.Down:
-          this.sprite.gotoAndPlayLoop("idlingDown");
-          break;
-      }
-    }
-  }; // end of idle function
+  this.addImpulse = function(xForce, yForce) {
+    this.gameWorldX = this.gameWorldX + xForce;
+    this.gameWorldY = this.gameWorldY + yForce;
+  }
+
 }
 
 Character.Types =  {
-    Human : 0,
-    Ghost : 1
+  Human : 0,
+  Ghost : 1
 };
 
 Character.Orientation = {
@@ -797,11 +835,20 @@ var dataCreate = exports;
   dataCreate.characterType = undefined;
   dataCreate.x = undefined;
   dataCreate.y = undefined;
+  dataCreate.gameWorldX = undefined;
+  dataCreate.gameWorldY = undefined;
 })();
 
 dataCreate.encode = function(){
   // msg [msgType(Create), playerId, characterType, x, y]
-  var msg = [1, this.playerId, this.characterType, this.x, this.y];
+  var msg = [1, this.playerId, this.characterType, this.x, this.y, this.gameWorldX, this.gameWorldY];
+
+  this.playerId = undefined;
+  this.characterType = undefined;
+  this.x = undefined;
+  this.y = undefined;
+  this.gameWorldX = undefined;
+  this.gameWorldY = undefined;
   return msg;
 };
 
@@ -812,15 +859,21 @@ var dataUpdate = exports;
   dataUpdate.x = undefined;
   dataUpdate.y = undefined;
   dataUpdate.currentSequence = undefined;
+  dataUpdate.keysDown = undefined;
+  dataUpdate.gameWorldX = undefined;
+  dataUpdate.gameWorldY = undefined;
 })();
 
 dataUpdate.encode = function() {
   // [msgType, x, y]
-  var msg = [2, this.playerId, this.x, this.y, this.currentSequence];
+  var msg = [2, this.playerId, this.x, this.y, this.currentSequence, this.keysDown, this.gameWorldX, this.gameWorldY];
   this.playerId = undefined;
   this.x = undefined;
   this.y = undefined;
   this.currentSequence = undefined;
+  this.keysDown = undefined;
+  this.gameWorldX = undefined;
+  this.gameWorldY = undefined;
   return msg;
 };
 
@@ -847,12 +900,17 @@ dataUtil.decode  = function(msg){
       dataCreate.characterType = msg[2];
       dataCreate.x = msg[3];
       dataCreate.y = msg[4];
+      dataCreate.gameWorldX = msg[5];
+      dataCreate.gameWorldY = msg[6];
       return dataCreate;
     case this.MessageTypes.Update:
       dataUpdate.playerId = msg[1];
       dataUpdate.x = msg[2];
       dataUpdate.y = msg[3];
       dataUpdate.currentSequence = msg[4];
+      dataUpdate.keysDown = msg[5];
+      dataUpdate.gameWorldX = msg[6];
+      dataUpdate.gameWorldY = msg[7];
       return dataUpdate;
   }
 };

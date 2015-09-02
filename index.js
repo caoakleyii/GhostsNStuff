@@ -36,6 +36,8 @@ gameLoop = function(){
     dataUpdate.playerId = p.id;
     dataUpdate.x = p.character.x;
     dataUpdate.y = p.character.y;
+    dataUpdate.gameWorldX = p.character.gameWorldX;
+    dataUpdate.gameWorldY = p.character.gameWorldY;
     dataUpdate.currentSequence = p.character.currentSequence;
     var msg = dataUpdate.encode();
 
@@ -65,11 +67,15 @@ io.on('connection', function(socket) {
     }
     newPlayer.character.x = x;
     newPlayer.character.y = y;
+    newPlayer.character.gameWorldX = x;
+    newPlayer.character.gameWorldY = y;
     players[newPlayer.id] = newPlayer;
 
     createMsg.playerId = newPlayer.id;
     createMsg.x = x;
     createMsg.y = y;
+    createMsg.gameWorldX = x;
+    createMsg.gameWorldY = y;
 
 
     msg = createMsg.encode();
@@ -89,6 +95,8 @@ io.on('connection', function(socket) {
       data.characterType = p.character.type;
       data.x = p.character.x;
       data.y = p.character.y;
+      data.gameWorldX = p.character.gameWorldX;
+      data.gameWorldY = p.character.gameWorldY;
       msg =  data.encode();
       socket.emit('PlayerJoined', msg);
     }
@@ -98,6 +106,8 @@ io.on('connection', function(socket) {
     var data = dataUtil.decode(msg);
     players[socket.id].character.x = data.x;
     players[socket.id].character.y = data.y;
+    players[socket.id].character.gameWorldX = data.gameWorldX;
+    players[socket.id].character.gameWorldY = data.gameWorldY;
     players[socket.id].character.currentSequence = data.currentSequence;
   });
 });

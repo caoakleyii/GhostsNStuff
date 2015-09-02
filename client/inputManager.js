@@ -3,6 +3,8 @@ var Character = require('../core/character');
 InputManager = function(character){
   this.character = character;
   this.onKeyDown();
+  this.onKeyUp();
+  this.keysDown = [];
 };
 
 InputManager.inputType = {
@@ -52,24 +54,24 @@ InputManager.prototype.readInput = function() {
     // this will allow the charcter to walk into the correct direction based on which key's are still down,
     // in conjuction with what key was last pressed.
     // TODO: still needs to be fixed
-    if (InputManager.inputType.Right in keysDown) {
+    if (InputManager.inputType.Right in this.keysDown) {
         this.character.orientation = Character.Orientation.Right;
     }
 
-    if (InputManager.inputType.Left in keysDown) {
+    if (InputManager.inputType.Left in this.keysDown) {
         this.character.orientation = Character.Orientation.Left;
     }
 
-    if (InputManager.inputType.Down in keysDown) {
+    if (InputManager.inputType.Down in this.keysDown) {
         this.character.orientation = Character.Orientation.Down;
     }
 
-    if (InputManager.inputType.Up in keysDown) {
+    if (InputManager.inputType.Up in this.keysDown) {
         this.character.orientation = Character.Orientation.Up;
     }
 
 
-    if (InputManager.inputType.Skill1 in keysDown) {
+    if (InputManager.inputType.Skill1 in this.keysDown) {
       this.character.skill1();
     }
 
@@ -77,18 +79,15 @@ InputManager.prototype.readInput = function() {
       this.character.state.isAttacking = false;
     }
 
-    if (walkingKeysDown())
-    {
-      if (InputManager.inputType.Sprint in keysDown) {
+    if (this.walkingKeysDown()) {
+      if (InputManager.inputType.Sprint in this.keysDown) {
         this.character.run();
       } else {
         this.character.walk();
       }
     }
 
-
-
-    if(keysDown.every(isKeyDownEmpty)){
+    if(this.keysDown.every(isKeyDownEmpty)){
       this.character.idle();
     }
 };
@@ -105,7 +104,7 @@ InputManager.prototype.onKeyDown = function() {
     }
 
     var input = InputManager.getInputType(e.keyCode);
-    keysDown[input] = true;
+    handler.keysDown[input] = true;
 
 
     // this will change the users direction on input
@@ -129,27 +128,25 @@ InputManager.prototype.onKeyDown = function() {
 
 }
 
+InputManager.prototype.onKeyUp = function(){
+  var handler = this;
 
+  $(document).keyup(function(e) {
+    var input = InputManager.getInputType(e.keyCode);
+    delete handler.keysDown[input];
+  });
+}
 
-var keysDown = [];
 
 function isKeyDownEmpty(element)
 {
    return false;
 }
 
-function walkingKeysDown() {
-  if (InputManager.inputType.Up in keysDown || InputManager.inputType.Down in keysDown
-      || InputManager.inputType.Left in keysDown || InputManager.inputType.Right in keysDown)
-    {
+InputManager.prototype.walkingKeysDown = function() {
+  if (InputManager.inputType.Up in this.keysDown || InputManager.inputType.Down in this.keysDown
+      || InputManager.inputType.Left in this.keysDown || InputManager.inputType.Right in this.keysDown) {
       return true;
     }
   return false;
 }
-
-
-
-$(document).keyup(function(e) {
-  var input = InputManager.getInputType(e.keyCode);
-  delete keysDown[input];
-});

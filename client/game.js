@@ -32,8 +32,8 @@ $(document).ready(function() {
       if (data.characterType == character.Types.Ghost) {
         joinedPlayer.character = new Ghost();
       }
-      joinedPlayer.character.sprite.x = data.x;
-      joinedPlayer.character.sprite.y = data.y;
+      joinedPlayer.character.sprite.x = data.gameWorldX;
+      joinedPlayer.character.sprite.y = data.gameWorldY;
       players[data.playerId] = joinedPlayer;
       stage.addChild(joinedPlayer.character.sprite);
       stage.addChild(joinedPlayer.character.healthBar);
@@ -44,8 +44,8 @@ $(document).ready(function() {
     // will decode this later.
     var data = dataUtil.decode(msg);
     player.id = data.playerId;
-    player.character.sprite.x = data.x;
-    player.character.sprite.y = data.y;
+    player.character.sprite.x = data.gameWorldX;
+    player.character.sprite.y = data.gameWorldY;
     stage.addChild(player.character.sprite);
     stage.addChild(player.character.healthBar);
   });
@@ -55,8 +55,8 @@ $(document).ready(function() {
 
     var p = players[data.playerId];
     if (p) {
-      p.character.sprite.x = data.x;
-      p.character.sprite.y = data.y;
+      p.character.sprite.x = player.character.backgroundGameWorld.x + data.gameWorldX;
+      p.character.sprite.y = player.character.backgroundGameWorld.y + data.gameWorldY;
       if (p.character.sprite.currentSequence  != data.currentSequence) {
         p.character.sprite.gotoAndPlay(data.currentSequence);
       }
@@ -127,6 +127,8 @@ $(document).ready(function() {
     // msg [msgType(update), (x), (y)]
     dataUpdate.x = player.character.sprite.x;
     dataUpdate.y = player.character.sprite.y;
+    dataUpdate.gameWorldX = player.character.worldX();
+    dataUpdate.gameWorldY = player.character.worldY();
     dataUpdate.currentSequence = player.character.sprite.currentSequence;
     var msg = dataUpdate.encode();
     socket.emit('UpdateServerPlayer', msg);
