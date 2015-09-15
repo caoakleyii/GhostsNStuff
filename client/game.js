@@ -1,9 +1,30 @@
 $(document).ready(function() {
+
+  PIXI.loader
+      .add('assets/playerIdlingUp.json')
+      .add('assets/playerIdlingDown.json')
+      .add('assets/playerIdlingLeft.json')
+      .add('assets/playerIdlingRight.json')
+      .add('assets/playerWalkingUp.json')
+      .add('assets/playerWalkingDown.json')
+      .add('assets/playerWalkingLeft.json')
+      .add('assets/playerWalkingRight.json')
+      .add('assets/playerSwingingUp.json')
+      .add('assets/playerSwingingDown.json')
+      .add('assets/playerSwingingLeft.json')
+      .add('assets/playerSwingingRight.json')
+      .add('assets/fireballUp.json')
+      .add('assets/fireballDown.json')
+      .add('assets/fireballLeft.json')
+      .add('assets/fireballRight.json')
+      .load(onAssetsLoaded);
+
   var dataUtil = require('../core/data.util');
   var dataCreate = require('../core/data.create');
   var dataUpdate = require('../core/data.update');
   var character = require('../core/character');
   var map = require('../core/gameWorld');
+  var Physics = require('../core/physics');
 
   var renderer = new PIXI.CanvasRenderer(1024, 768, { autoResize : true, backgroundColor : 0x99FF00  });
 
@@ -18,6 +39,19 @@ $(document).ready(function() {
   var foregroundGameWorld;
   var backgroundGameWorld;
 
+  function onAssetsLoaded(){
+    var backgroundGameWorldTexture = new PIXI.Texture.fromImage('images/backgroundGameWorld.png');
+    backgroundGameWorld = new PIXI.Sprite(backgroundGameWorldTexture);
+    stage.addChild(backgroundGameWorld);
+    window.Physics = new Physics(backgroundGameWorld);
+    var foregroundGameWorldTexture = new PIXI.Texture.fromImage('images/foregroundGameWorld.png');
+    foregroundGameWorld = new PIXI.Sprite(foregroundGameWorldTexture);
+    stage.addChild(foregroundGameWorld);
+
+    userSelectedCharacter();
+    animate();
+  }
+
 
   socket.on('PlayerJoined', function(msg) {
     // create OTHER player class
@@ -29,32 +63,36 @@ $(document).ready(function() {
       if (data.characterType == character.Types.Human) {
         joinedPlayer.character = new Human();
       }
-      if (data.characterType == character.Types.Ghost) {
-        joinedPlayer.character = new Ghost();
-      }
       joinedPlayer.character.sprite.x = data.gameWorldX;
       joinedPlayer.character.sprite.y = data.gameWorldY;
       players[data.playerId] = joinedPlayer;
-      stage.addChild(joinedPlayer.character.sprite);
-      stage.addChild(joinedPlayer.character.healthBar);
+      joinedPlayer.character.create(stage);
+    }
+  });
+
+  socket.on('PlayerLeft', function(msg) {
+    console.log('player quit');
+    var data = dataUtil.decode(msg);
+    var p = players[data.playerId];
+    if(p) {
+      delete players[data.playerId];
+      p.character.destroy();
     }
   });
 
   socket.on('CreateClientPlayer', function(msg){
-    // will decode this later.
     var data = dataUtil.decode(msg);
     player.id = data.playerId;
     player.character.sprite.x = data.gameWorldX;
     player.character.sprite.y = data.gameWorldY;
-    stage.addChild(player.character.sprite);
-    stage.addChild(player.character.healthBar);
+    player.character.create(stage);
   });
 
   socket.on('GameLoop', function(msg) {
     var data = dataUtil.decode(msg);
 
     var p = players[data.playerId];
-    if (p) {
+    if (p && data.playerId != player.id) {
       p.character.sprite.x = player.character.backgroundGameWorld.x + data.gameWorldX;
       p.character.sprite.y = player.character.backgroundGameWorld.y + data.gameWorldY;
       if (p.character.sprite.currentSequence  != data.currentSequence) {
@@ -70,57 +108,12 @@ $(document).ready(function() {
 
   });
 
-  PIXI.loader
-      .add('assets/playerIdlingUp.json')
-      .add('assets/playerIdlingDown.json')
-      .add('assets/playerIdlingLeft.json')
-      .add('assets/playerIdlingRight.json')
-      .add('assets/playerWalkingUp.json')
-      .add('assets/playerWalkingDown.json')
-      .add('assets/playerWalkingLeft.json')
-      .add('assets/playerWalkingRight.json')
-      .add('assets/playerSwingingUp.json')
-      .add('assets/playerSwingingDown.json')
-      .add('assets/playerSwingingLeft.json')
-      .add('assets/playerSwingingRight.json')
-      .add('assets/ghostIdle.json')
-      .add('assets/ghostWalkingRight.json')
-      .add('assets/ghostWalkingLeft.json')
-      .add('assets/ghostWalkingUp.json')
-      .add('assets/ghostWalkingDown.json')
-      .load(onAssetsLoaded);
-
-
-
-  function onAssetsLoaded(){
-    var backgroundGameWorldTexture = new PIXI.Texture.fromImage('images/backgroundGameWorld.png');
-    backgroundGameWorld = new PIXI.Sprite(backgroundGameWorldTexture);
-    stage.addChild(backgroundGameWorld);
-
-    var foregroundGameWorldTexture = new PIXI.Texture.fromImage('images/foregroundGameWorld.png');
-    foregroundGameWorld = new PIXI.Sprite(foregroundGameWorldTexture);
-    stage.addChild(foregroundGameWorld);
-
-    userSelectedCharacter();
-    animate();
-  }
-
   function animate() {
-    player.character.sprite.advanceTime(1/60);
-    player.character.drawUpdate();
-    for(var id in players) {
-      var p  = players[id];
-      if (p) {
-        p.character.sprite.advanceTime(1/60);
-        p.character.drawUpdate();
-      }
-    }
     player.inputHandler.readInput();
     sendUpdatePlayer();
     renderer.render(stage);
-    requestAnimationFrame(animate);
-
     stage.setChildIndex(foregroundGameWorld, stage.children.length - 1);
+    requestAnimationFrame(animate);
   }
 
   function sendUpdatePlayer(){

@@ -79,25 +79,25 @@ PIXI.AnimatedSprite.prototype.stop=function(){
   this.playing=false;
 }
 
-PIXI.AnimatedSprite.prototype.addImpulse = function (xForce, yForce){
-  if (this.hitBox){
-    var hitBoxPosition = new PIXI.Point(this.hitBox.x + xForce, this.position.y + yForce);
+PIXI.AnimatedSprite.prototype.addImpulse = function (xForce, yForce, gamePosition) {
+  var futurePosition =  new PIXI.Point(this.position.x + xForce, this.position.y + yForce);
+  if (gamePosition) {
+    gamePosition.x += xForce;
+    gamePosition.y += yForce;
+    if(Physics.outOfGameWorld(gamePosition))
+    {
+      return;
+    }
   }
-
-  this.position = new PIXI.Point(this.position.x + xForce, this.position.y + yForce);
-
-  // if (!Physics.isPointOutsideFrame(hitBoxPosition))
-  // {
-  //
-  // }
+  this.position = futurePosition;
 }
 
 PIXI.AnimatedSprite.prototype.updateHitBox = function()
 {
   if(this.width > 0)
-    this.hitBox.x = this.position.x - (this.width / 2);
+  this.hitBox.x = this.position.x - (this.width / 2);
   else if (this.width < 0)
-    this.hitBox.x = this.position.x + (this.width / 2);
+  this.hitBox.x = this.position.x + (this.width / 2);
 
   this.hitBox.y = this.position.y - (this.height / 2);
 

@@ -80,25 +80,25 @@ PIXI.AnimatedSprite.prototype.stop=function(){
   this.playing=false;
 }
 
-PIXI.AnimatedSprite.prototype.addImpulse = function (xForce, yForce){
-  if (this.hitBox){
-    var hitBoxPosition = new PIXI.Point(this.hitBox.x + xForce, this.position.y + yForce);
+PIXI.AnimatedSprite.prototype.addImpulse = function (xForce, yForce, gamePosition) {
+  var futurePosition =  new PIXI.Point(this.position.x + xForce, this.position.y + yForce);
+  if (gamePosition) {
+    gamePosition.x += xForce;
+    gamePosition.y += yForce;
+    if(Physics.outOfGameWorld(gamePosition))
+    {
+      return;
+    }
   }
-
-  this.position = new PIXI.Point(this.position.x + xForce, this.position.y + yForce);
-
-  // if (!Physics.isPointOutsideFrame(hitBoxPosition))
-  // {
-  //
-  // }
+  this.position = futurePosition;
 }
 
 PIXI.AnimatedSprite.prototype.updateHitBox = function()
 {
   if(this.width > 0)
-    this.hitBox.x = this.position.x - (this.width / 2);
+  this.hitBox.x = this.position.x - (this.width / 2);
   else if (this.width < 0)
-    this.hitBox.x = this.position.x + (this.width / 2);
+  this.hitBox.x = this.position.x + (this.width / 2);
 
   this.hitBox.y = this.position.y - (this.height / 2);
 
@@ -132,33 +132,17 @@ PIXI.AnimatedSprite.prototype.advanceTime=function(dt){
 
 },{}],2:[function(require,module,exports){
 ClientCharacter = function(){
+  // inherit from GameObject
+  GameObject.call(this);
+
   this.healthBar = new PIXI.Graphics();
   this.healthBar.beginFill(0xFF0000)
   this.healthBar.lineStyle(1, 0xFFFFFF);
-  this.healthBar
-  .drawRect(this.sprite.position.x - (this.sprite.width / 2 - 2),
-  this.sprite.position.y - 15,
-  (this.currentHP / this.totalHP) * 50,
-  5);
-  this.drawUpdate = function(){
-    this.healthBar.position.x = this.sprite.position.x - (this.sprite.width / 2 - 2);
-    this.healthBar.position.y = this.sprite.position.y - 15;
-    this.width = (this.currentHP / this.totalHP) * 50;
-  };
-  this.client = true;
-  this.backgroundGameWorld = undefined;
-  this.foregroundGameWorld = undefined;
-
-  this.worldX = function(){
-    return this.sprite.x - this.backgroundGameWorld.x;
-  };
-  this.worldY = function(){
-    return this.sprite.y - this.backgroundGameWorld.y;
-  };
+  this.healthBar.drawRect(this.sprite.position.x - (this.sprite.width / 2 - 2),  this.sprite.position.y - 15,  (this.currentHP / this.totalHP) * 50,  5);
 
   this.clientWalk = function (frameRate, speedModifier) {
     var backgroundTransitionSpeed = (this.speed * speedModifier);
-
+    var gamePosition  = new PIXI.Point(this.worldX(), this.worldY());
     if (!this.state.isAttacking) {
       this.sprite.frameRate = frameRate;
 
@@ -167,44 +151,44 @@ ClientCharacter = function(){
         if (this.sprite.currentSequence != "walkingRight") {
           this.sprite.gotoAndPlayLoop("walkingRight");
         }
-        if (this.sprite.x >= 865) {
+        if (this.sprite.x >= 865 && this.worldX() <= (this.backgroundGameWorld.width - 159)) {
           this.backgroundGameWorld.addImpulse(backgroundTransitionSpeed * -1 , 0);
           this.foregroundGameWorld.addImpulse(backgroundTransitionSpeed * -1 , 0);
         } else {
-          this.sprite.addImpulse(this.speed * speedModifier, 0);
+          this.sprite.addImpulse(this.speed * speedModifier, 0, gamePosition);
         }
         break;
         case Character.Orientation.Left:
         if (this.sprite.currentSequence != "walkingLeft") {
           this.sprite.gotoAndPlayLoop("walkingLeft");
         }
-        if (this.sprite.x <= 165) {
+        if (this.sprite.x <= 165  && this.worldX() >= 165) {
           this.backgroundGameWorld.addImpulse(backgroundTransitionSpeed, 0);
           this.foregroundGameWorld.addImpulse(backgroundTransitionSpeed, 0);
         } else {
-          this.sprite.addImpulse((this.speed * speedModifier) * -1, 0);
+          this.sprite.addImpulse((this.speed * speedModifier) * -1, 0, gamePosition);
         }
         break;
         case Character.Orientation.Down:
         if (this.sprite.currentSequence != "walkingDown") {
           this.sprite.gotoAndPlayLoop("walkingDown");
         }
-        if (this.sprite.y >= 645 ) {
+        if (this.sprite.y >= 645 && this.worldY() <= (this.backgroundGameWorld.height - 123)) {
           this.backgroundGameWorld.addImpulse(0, backgroundTransitionSpeed * -1);
           this.foregroundGameWorld.addImpulse(0, backgroundTransitionSpeed * -1);
         } else {
-          this.sprite.addImpulse(0, this.speed * speedModifier);
+          this.sprite.addImpulse(0, this.speed * speedModifier, gamePosition);
         }
         break;
         case Character.Orientation.Up:
         if (this.sprite.currentSequence != "walkingUp") {
           this.sprite.gotoAndPlayLoop("walkingUp");
         }
-        if (this.sprite.y <= 125) {
+        if (this.sprite.y <= 125 && this.worldY() >= 125) {
           this.backgroundGameWorld.addImpulse(0, backgroundTransitionSpeed);
           this.foregroundGameWorld.addImpulse(0, backgroundTransitionSpeed);
         } else {
-          this.sprite.addImpulse(0, (this.speed * speedModifier) * -1);
+          this.sprite.addImpulse(0, (this.speed * speedModifier) * -1, gamePosition);
         }
         break;
       }
@@ -229,10 +213,7 @@ ClientCharacter = function(){
       }
     }
   }; // end of idle function
-}
-
-
-module.exports = ClientCharacter;
+};
 
 },{}],3:[function(require,module,exports){
 PIXI.Sprite.prototype.addImpulse = function (xForce, yForce){
@@ -240,12 +221,144 @@ PIXI.Sprite.prototype.addImpulse = function (xForce, yForce){
 }
 
 },{}],4:[function(require,module,exports){
+var fireballRightFrames = [];
+var fireballLeftFrames = [];
+var fireballUpFrames = [];
+var fireballDownFrames = [];
+var assetsLoaded = false;
+
+Fireball = function(orientation) {
+  // Load Frames
+  LoadFrames(this);
+
+  //inherit from gameObject
+  GameObject.call(this);
+
+  this.speed = 5;
+
+  switch(orientation) {
+    case Character.Orientation.Right:
+    this.orientation = orientation;
+    this.sprite.gotoAndPlayLoop("fireballRight");
+    break;
+    case Character.Orientation.Left:
+    this.orientation = orientation;
+    this.sprite.gotoAndPlayLoop("fireballLeft");
+    break;
+    case Character.Orientation.Up:
+    this.orientation = orientation;
+    this.sprite.gotoAndPlayLoop("fireballUp");
+    break;
+    case Character.Orientation.Down:
+    this.orientation = orientation;
+    this.sprite.gotoAndPlayLoop("fireballDown");
+    break;
+  }
+}
+
+Fireball.prototype.completedSequence = function(sprite, completed){
+
+}
+
+Fireball.prototype.create = function(stage) {
+  this.stage = stage;
+  this.stage.addChild(this.sprite);
+
+  this.update();
+};
+
+Fireball.prototype.update = function() {
+  // advance animation
+  this.sprite.advanceTime(1/60);
+
+  // move fireball
+  switch(this.orientation) {
+    case Character.Orientation.Right:
+    this.sprite.addImpulse(this.speed, 0)
+    break;
+    case Character.Orientation.Left:
+    this.sprite.addImpulse(this.speed * -1, 0)
+    break;
+    case Character.Orientation.Up:
+    this.sprite.addImpulse(0, this.speed * -1)
+    break;
+    case Character.Orientation.Down:
+    this.sprite.addImpulse(0, this.speed)
+    break;
+  }
+
+  requestAnimationFrame(this.update.bind(this));
+};
+
+Fireball.prototype.destroy = function() {
+
+};
+
+
+function LoadFrames(fireball) {
+
+  var sequences = {
+    "fireballRight" : fireballRightFrames,
+    "fireballLeft" : fireballLeftFrames,
+    "fireballUp" : fireballUpFrames,
+    "fireballDown" : fireballDownFrames
+  };
+
+  if (!assetsLoaded) {
+    for (var i = 0; i < 6; i++) {
+      fireballUpFrames.push(PIXI.Texture.fromFrame('fireball (Fireball Up) ' + i +'.ase'));
+    }
+
+    for (var i = 0; i < 6; i++) {
+      fireballDownFrames.push(PIXI.Texture.fromFrame('fireball (Fireball Down) ' + i +'.ase'));
+    }
+
+    for (var i = 0; i < 6; i++) {
+      fireballLeftFrames.push(PIXI.Texture.fromFrame('fireball (Fireball Left) ' + i +'.ase'));
+    }
+
+    for (var i = 0; i < 6; i++) {
+      fireballRightFrames.push(PIXI.Texture.fromFrame('fireball (Fireball Right) ' + i +'.ase'));
+    }
+    assetsLoaded = true;
+  }
+
+  fireball.state = new State();
+  fireball.sprite = new PIXI.AnimatedSprite(sequences);
+  fireball.sprite.onComplete = fireball.completedSequence;
+  fireball.sprite.frameRate = 10;
+  fireball.sprite.loop = true;
+
+}
+
+},{}],5:[function(require,module,exports){
 $(document).ready(function() {
+
+  PIXI.loader
+      .add('assets/playerIdlingUp.json')
+      .add('assets/playerIdlingDown.json')
+      .add('assets/playerIdlingLeft.json')
+      .add('assets/playerIdlingRight.json')
+      .add('assets/playerWalkingUp.json')
+      .add('assets/playerWalkingDown.json')
+      .add('assets/playerWalkingLeft.json')
+      .add('assets/playerWalkingRight.json')
+      .add('assets/playerSwingingUp.json')
+      .add('assets/playerSwingingDown.json')
+      .add('assets/playerSwingingLeft.json')
+      .add('assets/playerSwingingRight.json')
+      .add('assets/fireballUp.json')
+      .add('assets/fireballDown.json')
+      .add('assets/fireballLeft.json')
+      .add('assets/fireballRight.json')
+      .load(onAssetsLoaded);
+
   var dataUtil = require('../core/data.util');
   var dataCreate = require('../core/data.create');
   var dataUpdate = require('../core/data.update');
   var character = require('../core/character');
   var map = require('../core/gameWorld');
+  var Physics = require('../core/physics');
 
   var renderer = new PIXI.CanvasRenderer(1024, 768, { autoResize : true, backgroundColor : 0x99FF00  });
 
@@ -260,6 +373,19 @@ $(document).ready(function() {
   var foregroundGameWorld;
   var backgroundGameWorld;
 
+  function onAssetsLoaded(){
+    var backgroundGameWorldTexture = new PIXI.Texture.fromImage('images/backgroundGameWorld.png');
+    backgroundGameWorld = new PIXI.Sprite(backgroundGameWorldTexture);
+    stage.addChild(backgroundGameWorld);
+    window.Physics = new Physics(backgroundGameWorld);
+    var foregroundGameWorldTexture = new PIXI.Texture.fromImage('images/foregroundGameWorld.png');
+    foregroundGameWorld = new PIXI.Sprite(foregroundGameWorldTexture);
+    stage.addChild(foregroundGameWorld);
+
+    userSelectedCharacter();
+    animate();
+  }
+
 
   socket.on('PlayerJoined', function(msg) {
     // create OTHER player class
@@ -271,32 +397,36 @@ $(document).ready(function() {
       if (data.characterType == character.Types.Human) {
         joinedPlayer.character = new Human();
       }
-      if (data.characterType == character.Types.Ghost) {
-        joinedPlayer.character = new Ghost();
-      }
       joinedPlayer.character.sprite.x = data.gameWorldX;
       joinedPlayer.character.sprite.y = data.gameWorldY;
       players[data.playerId] = joinedPlayer;
-      stage.addChild(joinedPlayer.character.sprite);
-      stage.addChild(joinedPlayer.character.healthBar);
+      joinedPlayer.character.create(stage);
+    }
+  });
+
+  socket.on('PlayerLeft', function(msg) {
+    console.log('player quit');
+    var data = dataUtil.decode(msg);
+    var p = players[data.playerId];
+    if(p) {
+      delete players[data.playerId];
+      p.character.destroy();
     }
   });
 
   socket.on('CreateClientPlayer', function(msg){
-    // will decode this later.
     var data = dataUtil.decode(msg);
     player.id = data.playerId;
     player.character.sprite.x = data.gameWorldX;
     player.character.sprite.y = data.gameWorldY;
-    stage.addChild(player.character.sprite);
-    stage.addChild(player.character.healthBar);
+    player.character.create(stage);
   });
 
   socket.on('GameLoop', function(msg) {
     var data = dataUtil.decode(msg);
 
     var p = players[data.playerId];
-    if (p) {
+    if (p && data.playerId != player.id) {
       p.character.sprite.x = player.character.backgroundGameWorld.x + data.gameWorldX;
       p.character.sprite.y = player.character.backgroundGameWorld.y + data.gameWorldY;
       if (p.character.sprite.currentSequence  != data.currentSequence) {
@@ -312,57 +442,12 @@ $(document).ready(function() {
 
   });
 
-  PIXI.loader
-      .add('assets/playerIdlingUp.json')
-      .add('assets/playerIdlingDown.json')
-      .add('assets/playerIdlingLeft.json')
-      .add('assets/playerIdlingRight.json')
-      .add('assets/playerWalkingUp.json')
-      .add('assets/playerWalkingDown.json')
-      .add('assets/playerWalkingLeft.json')
-      .add('assets/playerWalkingRight.json')
-      .add('assets/playerSwingingUp.json')
-      .add('assets/playerSwingingDown.json')
-      .add('assets/playerSwingingLeft.json')
-      .add('assets/playerSwingingRight.json')
-      .add('assets/ghostIdle.json')
-      .add('assets/ghostWalkingRight.json')
-      .add('assets/ghostWalkingLeft.json')
-      .add('assets/ghostWalkingUp.json')
-      .add('assets/ghostWalkingDown.json')
-      .load(onAssetsLoaded);
-
-
-
-  function onAssetsLoaded(){
-    var backgroundGameWorldTexture = new PIXI.Texture.fromImage('images/backgroundGameWorld.png');
-    backgroundGameWorld = new PIXI.Sprite(backgroundGameWorldTexture);
-    stage.addChild(backgroundGameWorld);
-
-    var foregroundGameWorldTexture = new PIXI.Texture.fromImage('images/foregroundGameWorld.png');
-    foregroundGameWorld = new PIXI.Sprite(foregroundGameWorldTexture);
-    stage.addChild(foregroundGameWorld);
-
-    userSelectedCharacter();
-    animate();
-  }
-
   function animate() {
-    player.character.sprite.advanceTime(1/60);
-    player.character.drawUpdate();
-    for(var id in players) {
-      var p  = players[id];
-      if (p) {
-        p.character.sprite.advanceTime(1/60);
-        p.character.drawUpdate();
-      }
-    }
     player.inputHandler.readInput();
     sendUpdatePlayer();
     renderer.render(stage);
-    requestAnimationFrame(animate);
-
     stage.setChildIndex(foregroundGameWorld, stage.children.length - 1);
+    requestAnimationFrame(animate);
   }
 
   function sendUpdatePlayer(){
@@ -386,70 +471,21 @@ $(document).ready(function() {
   }
 });
 
-},{"../core/character":11,"../core/data.create":12,"../core/data.update":13,"../core/data.util":14,"../core/gameWorld":15}],5:[function(require,module,exports){
-var character = require('../core/character');
-var clientCharacter = require('./clientCharacter');
-
-Ghost = function() {
-  var ghostIdleFrames = [];
-
-  for (var i = 0; i < 6; i++) {
-    ghostIdleFrames.push(PIXI.Texture.fromFrame('ghost (Idle Ghost) ' + i + '.aseprite'));
-  }
-
-  var ghostWalkingRight = [];
-
-  for (i = 0; i < 6; i++) {
-    ghostWalkingRight.push(PIXI.Texture.fromFrame('ghost (Walking Right) '+ i +'.aseprite'));
-  }
-
-  var ghostWalkingLeft = [];
-
-  for (i = 0; i < 6; i++) {
-    ghostWalkingLeft.push(PIXI.Texture.fromFrame('ghost (Walking Left) '+ i +'.aseprite'));
-  }
-
-  var ghostWalkingUp = [];
-
-  for (i = 0; i < 6; i++) {
-    ghostWalkingUp.push(PIXI.Texture.fromFrame('ghost (Walking Up) '+ i +'.aseprite'));
-  }
-
-  var ghostWalkingDown = [];
-
-  for (i = 0; i < 6; i++) {
-    ghostWalkingDown.push(PIXI.Texture.fromFrame('ghost (Walking Down) '+ i +'.aseprite'));
-  }
-
-
-  var sequences = {
-    "idling": ghostIdleFrames,
-    "walkingRight" : ghostWalkingRight,
-    "walkingLeft" : ghostWalkingLeft,
-    "walkingUp" : ghostWalkingUp,
-    "walkingDown" : ghostWalkingDown
+},{"../core/character":12,"../core/data.create":13,"../core/data.update":14,"../core/data.util":15,"../core/gameWorld":16,"../core/physics":17}],6:[function(require,module,exports){
+GameObject = function() {
+  this.client = true;
+  this.backgroundGameWorld = undefined;
+  this.foregroundGameWorld = undefined;
+  this.worldX = function(){
+    return this.sprite.x - this.backgroundGameWorld.x;
   };
-
-  this.state = new State();
-  this.sprite = new PIXI.AnimatedSprite(sequences);
-  this.sprite.frameRate = 2;
-  this.sprite.onComplete = this.ghostCompletedSequence;
-  this.sprite.loop = true;
-  character.call(this);
-  // has to be called after character.call because of references to hp, etc.
-  clientCharacter.call(this);
-  this.sprite.play();
-  this.speed = 2;
-
+  this.worldY = function(){
+    return this.sprite.y - this.backgroundGameWorld.y;
+  };
 };
 
-Ghost.prototype.ghostCompletedSequence = function(sprite, completed){
-    // sprite.gotoAndPlay("idle");
-  };
-
-},{"../core/character":11,"./clientCharacter":2}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var character = require('../core/character');
-var clientCharacter = require('./clientCharacter');
 
 var humanIdleUpFrames = [];
 var humanIdleDownFrames = [];
@@ -463,12 +499,88 @@ var humanSwingUpFrames = [];
 var humanSwingDownFrames = [];
 var humanSwingLeftFrames = [];
 var humanSwingRightFrames = [];
-
+var assetsLoaded = false;
 
 Human = function() {
+  // init Load Frames
+  LoadFrames(this);
 
-  // Load Frames
-  LoadFrames();
+  // inherit from Character and Client Character
+  character.call(this);
+  ClientCharacter.call(this);
+
+  this.baseFrameRate = 3;
+  this.sprite.frameRate = this.baseFrameRate;
+  this.sprite.play();
+  this.speed = 1.5;
+
+  this.skill1 = function() {
+    this.swing();
+    this.castFireball();
+  };
+
+  this.swing = function() {
+    if (!this.state.isAttacking) {
+      this.state.isAttacking = true;
+      console.log("swing");
+      switch(this.orientation){
+        case Character.Orientation.Right:
+        this.sprite.gotoAndPlayOnce("swingingRight");
+        break;
+        case Character.Orientation.Left:
+        this.sprite.gotoAndPlayOnce("swingingLeft");
+        break;
+        case Character.Orientation.Up:
+        this.sprite.gotoAndPlayOnce("swingingUp");
+        break;
+        case Character.Orientation.Down:
+        this.sprite.gotoAndPlayOnce("swingingDown");
+        break;
+      }
+    }
+  };
+
+  this.castFireball = function() {
+    if (!this.state.isCasting) {
+      this.state.isCasting = true;
+      var fireball = new Fireball(this.orientation);
+      fireball.sprite.x = this.sprite.x;
+      fireball.sprite.y = this.sprite.y;
+      fireball.create(this.stage);
+    }
+  };
+}
+
+Human.prototype.create = function(stage) {
+  this.stage = stage;
+  this.stage.addChild(this.sprite);
+  this.stage.addChild(this.healthBar);
+
+  this.update();
+};
+
+Human.prototype.update = function() {
+  // advance animation
+  this.sprite.advanceTime(1/60);
+
+  // keep health bar above character
+  this.healthBar.position.x = this.sprite.position.x - (this.sprite.width / 2 - 2);
+  this.healthBar.position.y = this.sprite.position.y - 15;
+  this.width = (this.currentHP / this.totalHP) * 50;
+
+  requestAnimationFrame(this.update.bind(this));
+};
+
+Human.prototype.destroy = function() {
+  this.stage.removeChild(this.sprite);
+  this.stage.removeChild(this.healthBar);
+};
+
+Human.prototype.humanCompletedSequence = function(sprite, completed){
+
+}
+
+function LoadFrames(human) {
 
   var sequences = {
     "idlingDown" : humanIdleDownFrames,
@@ -485,102 +597,70 @@ Human = function() {
     "swingingRight" : humanSwingRightFrames
   };
 
-  this.state = new State();
-  this.sprite = new PIXI.AnimatedSprite(sequences);
-  this.sprite.onComplete = this.humanCompletedSequence;
-  this.sprite.loop = true;
-  character.call(this);
-  clientCharacter.call(this);
-  this.baseFrameRate = 3;
-  this.sprite.frameRate = this.baseFrameRate;
-  this.sprite.play();
-  this.speed = 1.5;
-  this.skill1 = function() {
-    this.swing();
-  };
+
+  if (!assetsLoaded) {
+
+    // Idle Frames
+    for (var i = 0; i < 1; i++) {
+      humanIdleUpFrames.push(PIXI.Texture.fromFrame('Player (Idling Up) ' + i +'.ase'));
+    }
+
+    for (var i = 0; i < 1; i++) {
+      humanIdleDownFrames.push(PIXI.Texture.fromFrame('Player (Idling Down) ' + i +'.ase'));
+    }
+
+    for (var i = 0; i < 1; i++) {
+      humanIdleLeftFrames.push(PIXI.Texture.fromFrame('Player (Idling Left) ' + i +'.ase'));
+    }
+
+    for (var i = 0; i < 1; i++) {
+      humanIdleRightFrames.push(PIXI.Texture.fromFrame('Player (Idling Right) ' + i +'.ase'));
+    }
 
 
-  this.swing = function() {
-    if (!this.state.isAttacking) {
-        this.state.isAttacking = true;
-        switch(this.orientation){
-          case Character.Orientation.Right:
-            this.sprite.gotoAndPlayOnce("swingingRight");
-            break;
-          case Character.Orientation.Left:
-            this.sprite.gotoAndPlayOnce("swingingLeft");
-            break;
-          case Character.Orientation.Up:
-            this.sprite.gotoAndPlayOnce("swingingUp");
-            break;
-          case Character.Orientation.Down:
-            this.sprite.gotoAndPlayOnce("swingingDown");
-            break;
-        }
-      }
-  };
+    // Walk Frames
+    for (var i = 0; i < 4; i++) {
+      humanWalkUpFrames.push(PIXI.Texture.fromFrame('Player (Walking Up) ' + i + '.ase'));
+    }
+
+    for (var i = 0; i < 4; i++) {
+      humanWalkDownFrames.push(PIXI.Texture.fromFrame('Player (Walking Down) ' + i + '.ase'));
+    }
+
+    for (var i = 0; i < 4; i++) {
+      humanWalkLeftFrames.push(PIXI.Texture.fromFrame('Player (Walking Left) ' + i + '.ase'));
+    }
+
+    for (var i = 0; i < 4; i++) {
+      humanWalkRightFrames.push(PIXI.Texture.fromFrame('Player (Walking Right) ' + i + '.ase'));
+    }
+
+    // Swinging Frames
+    for (var i = 0; i < 4; i++){
+      humanSwingUpFrames.push(PIXI.Texture.fromFrame('Player (Swinging Up) ' + i + '.ase'));
+    }
+
+    for (var i = 0; i < 4; i++){
+      humanSwingDownFrames.push(PIXI.Texture.fromFrame('Player (Swinging Down) ' + i + '.ase'));
+    }
+
+    for (var i = 0; i < 4; i++){
+      humanSwingLeftFrames.push(PIXI.Texture.fromFrame('Player (Swinging Left) ' + i + '.ase'));
+    }
+
+    for (var i = 0; i < 4; i++){
+      humanSwingRightFrames.push(PIXI.Texture.fromFrame('Player (Swinging Right) ' + i + '.ase'));
+    }
+    assetsLoaded = true;
+  }
+
+  human.state = new State();
+  human.sprite = new PIXI.AnimatedSprite(sequences);
+  human.sprite.onComplete = human.humanCompletedSequence;
+  human.sprite.loop = true;
 }
 
-Human.prototype.humanCompletedSequence = function(sprite, completed){
-
-}
-
-function LoadFrames() {
-  // Idle Frames
-  for (var i = 0; i < 1; i++) {
-    humanIdleUpFrames.push(PIXI.Texture.fromFrame('Player (Idling Up) ' + i +'.ase'));
-  }
-
-  for (var i = 0; i < 1; i++) {
-    humanIdleDownFrames.push(PIXI.Texture.fromFrame('Player (Idling Down) ' + i +'.ase'));
-  }
-
-  for (var i = 0; i < 1; i++) {
-    humanIdleLeftFrames.push(PIXI.Texture.fromFrame('Player (Idling Left) ' + i +'.ase'));
-  }
-
-  for (var i = 0; i < 1; i++) {
-    humanIdleRightFrames.push(PIXI.Texture.fromFrame('Player (Idling Right) ' + i +'.ase'));
-  }
-
-
-  // Walk Frames
-
-  for (var i = 0; i < 4; i++) {
-    humanWalkUpFrames.push(PIXI.Texture.fromFrame('Player (Walking Up) ' + i + '.ase'));
-  }
-
-  for (var i = 0; i < 4; i++) {
-    humanWalkDownFrames.push(PIXI.Texture.fromFrame('Player (Walking Down) ' + i + '.ase'));
-  }
-
-  for (var i = 0; i < 4; i++) {
-    humanWalkLeftFrames.push(PIXI.Texture.fromFrame('Player (Walking Left) ' + i + '.ase'));
-  }
-
-  for (var i = 0; i < 4; i++) {
-    humanWalkRightFrames.push(PIXI.Texture.fromFrame('Player (Walking Right) ' + i + '.ase'));
-  }
-
-  // Swinging Frames
-  for (var i = 0; i < 4; i++){
-    humanSwingUpFrames.push(PIXI.Texture.fromFrame('Player (Swinging Up) ' + i + '.ase'));
-  }
-
-  for (var i = 0; i < 4; i++){
-    humanSwingDownFrames.push(PIXI.Texture.fromFrame('Player (Swinging Down) ' + i + '.ase'));
-  }
-
-  for (var i = 0; i < 4; i++){
-    humanSwingLeftFrames.push(PIXI.Texture.fromFrame('Player (Swinging Left) ' + i + '.ase'));
-  }
-
-  for (var i = 0; i < 4; i++){
-    humanSwingRightFrames.push(PIXI.Texture.fromFrame('Player (Swinging Right) ' + i + '.ase'));
-  }
-}
-
-},{"../core/character":11,"./clientCharacter":2}],7:[function(require,module,exports){
+},{"../core/character":12}],8:[function(require,module,exports){
 var Character = require('../core/character');
 
 InputManager = function(character){
@@ -608,25 +688,25 @@ InputManager.getInputType = function(key)
   switch(key)
   {
     case 39:
-      return InputManager.inputType.Right;
+    return InputManager.inputType.Right;
     case 37:
-      return InputManager.inputType.Left;
+    return InputManager.inputType.Left;
     case 38:
-      return InputManager.inputType.Up;
+    return InputManager.inputType.Up;
     case 40:
-      return InputManager.inputType.Down;
+    return InputManager.inputType.Down;
     case 32:
-      return InputManager.inputType.Jump;
+    return InputManager.inputType.Jump;
     case 16:
-      return InputManager.inputType.Sprint;
+    return InputManager.inputType.Sprint;
     case 70:
-      return InputManager.inputType.AutoAttack;
+    return InputManager.inputType.AutoAttack;
     case 65:
-      return InputManager.inputType.Skill1;
+    return InputManager.inputType.Skill1;
     case 83:
-      return InputManager.inputType.Skill2;
+    return InputManager.inputType.Skill2;
     case 68:
-      return InputManager.inputType.Skill3;
+    return InputManager.inputType.Skill3;
   }
 };
 
@@ -634,81 +714,84 @@ InputManager.getInputType = function(key)
 
 InputManager.prototype.readInput = function() {
 
-    // this will allow the charcter to walk into the correct direction based on which key's are still down,
-    // in conjuction with what key was last pressed.
-    // TODO: still needs to be fixed
-    if (InputManager.inputType.Right in this.keysDown) {
-        this.character.orientation = Character.Orientation.Right;
-    }
+  // this will allow the charcter to walk into the correct direction based on which key's are still down,
+  // in conjuction with what key was last pressed.
+  // TODO: still needs to be fixed
+  if (InputManager.inputType.Right in this.keysDown) {
+    this.character.orientation = Character.Orientation.Right;
+  }
 
-    if (InputManager.inputType.Left in this.keysDown) {
-        this.character.orientation = Character.Orientation.Left;
-    }
+  if (InputManager.inputType.Left in this.keysDown) {
+    this.character.orientation = Character.Orientation.Left;
+  }
 
-    if (InputManager.inputType.Down in this.keysDown) {
-        this.character.orientation = Character.Orientation.Down;
-    }
+  if (InputManager.inputType.Down in this.keysDown) {
+    this.character.orientation = Character.Orientation.Down;
+  }
 
-    if (InputManager.inputType.Up in this.keysDown) {
-        this.character.orientation = Character.Orientation.Up;
-    }
+  if (InputManager.inputType.Up in this.keysDown) {
+    this.character.orientation = Character.Orientation.Up;
+  }
 
+  if (InputManager.inputType.Skill1 in this.keysDown) {
+    this.character.skill1();
+  }
 
-    if (InputManager.inputType.Skill1 in this.keysDown) {
-      this.character.skill1();
-    }
+  if (this.character.state.isAttacking && !this.character.sprite.playing) {
+    this.character.state.isAttacking = false;
+    this.character.state.isCasting = false;
+  }
 
-    if (this.character.state.isAttacking && !this.character.sprite.playing) {
-      this.character.state.isAttacking = false;
+  if (this.walkingKeysDown()) {
+    if (InputManager.inputType.Sprint in this.keysDown) {
+      this.character.run();
+    } else {
+      this.character.walk();
     }
+  }
 
-    if (this.walkingKeysDown()) {
-      if (InputManager.inputType.Sprint in this.keysDown) {
-        this.character.run();
-      } else {
-        this.character.walk();
-      }
-    }
-
-    if(this.keysDown.every(isKeyDownEmpty)){
-      this.character.idle();
-    }
+  if(this.keysDown.every(isKeyDownEmpty)){
+    this.character.idle();
+  }
 };
 
 InputManager.prototype.onKeyDown = function() {
   var handler = this;
+  if(handler.character) {
+    $(document).keydown(function(e){
 
-  $(document).keydown(function(e){
+      // space and arrow keys
+      // prevent them from scrolling the page
+      if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.preventDefault();
+      }
 
-    // space and arrow keys
-    // prevent them from scrolling the page
-    if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-      e.preventDefault();
-    }
+      var input = InputManager.getInputType(e.keyCode);
+      handler.keysDown[input] = true;
+      if( input == 7) {
+      console.log('skill 1 was added');
+      }
 
-    var input = InputManager.getInputType(e.keyCode);
-    handler.keysDown[input] = true;
-
-
-    // this will change the users direction on input
-    if (InputManager.inputType.Right == input) {
+      // this will change the users direction on input
+      if (InputManager.inputType.Right == input) {
         handler.character.orientation = Character.Orientation.Right;
-    }
+      }
 
-    if (InputManager.inputType.Left == input) {
+      if (InputManager.inputType.Left == input) {
         handler.character.orientation = Character.Orientation.Left;
-    }
+      }
 
-    if (InputManager.inputType.Down == input) {
+      if (InputManager.inputType.Down == input) {
         handler.character.orientation = Character.Orientation.Down;
-    }
+      }
 
-    if (InputManager.inputType.Up == input) {
+      if (InputManager.inputType.Up == input) {
         handler.character.orientation = Character.Orientation.Up;
-    }
+      }
 
-  });
-
+      return false;
+    });
+  }
 }
 
 InputManager.prototype.onKeyUp = function(){
@@ -716,41 +799,47 @@ InputManager.prototype.onKeyUp = function(){
 
   $(document).keyup(function(e) {
     var input = InputManager.getInputType(e.keyCode);
+    if (input == 7) {
+      console.log('skill 1 was deleted');
+    }
     delete handler.keysDown[input];
   });
 }
 
-
 function isKeyDownEmpty(element)
 {
-   return false;
+  return false;
 }
 
 InputManager.prototype.walkingKeysDown = function() {
   if (InputManager.inputType.Up in this.keysDown || InputManager.inputType.Down in this.keysDown
-      || InputManager.inputType.Left in this.keysDown || InputManager.inputType.Right in this.keysDown) {
+    || InputManager.inputType.Left in this.keysDown || InputManager.inputType.Right in this.keysDown) {
       return true;
     }
-  return false;
-}
+    return false;
+  }
 
-},{"../core/character":11}],8:[function(require,module,exports){
+},{"../core/character":12}],9:[function(require,module,exports){
 var animatedSprite = require('./animatedSprite');
 var game = require('./game');
-var ghost = require('./ghost');
 var inputManager = require('./inputManager');
+var gameObject = require('./gameObject');
+var fireball = require('./fireball');
 var player = require('./player');
 var state = require('./state');
+var clientCharacter = require('./clientCharacter');
 var human = require('./human');
 var extensions = require('./extensions');
 
-},{"./animatedSprite":1,"./extensions":3,"./game":4,"./ghost":5,"./human":6,"./inputManager":7,"./player":9,"./state":10}],9:[function(require,module,exports){
+},{"./animatedSprite":1,"./clientCharacter":2,"./extensions":3,"./fireball":4,"./game":5,"./gameObject":6,"./human":7,"./inputManager":8,"./player":10,"./state":11}],10:[function(require,module,exports){
 Player = function(character){
   this.character = character;
-  this.inputHandler = new InputManager(character);
+  if(character) {
+    this.inputHandler = new InputManager(character);
+  }
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 State = function(){
   this.isWalkingLeft = false;
   this.isWalkingRight = false;
@@ -758,7 +847,7 @@ State = function(){
   this.isWalkingDown = false;
   this.isIdling = true;
 };
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 Character = function() {
   this.x = 0;
   this.y = 0;
@@ -814,8 +903,7 @@ Character = function() {
 }
 
 Character.Types =  {
-  Human : 0,
-  Ghost : 1
+  Human : 0
 };
 
 Character.Orientation = {
@@ -827,7 +915,7 @@ Character.Orientation = {
 
 module.exports = Character;
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var dataCreate = exports;
 
 (function() {
@@ -852,7 +940,7 @@ dataCreate.encode = function(){
   return msg;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var dataUpdate = exports;
 (function(){
   dataUpdate.playerId = undefined;
@@ -877,7 +965,7 @@ dataUpdate.encode = function() {
   return msg;
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var dataCreate = require('./data.create'),
     dataUpdate = require('./data.update');
 
@@ -915,7 +1003,7 @@ dataUtil.decode  = function(msg){
   }
 };
 
-},{"./data.create":12,"./data.update":13}],15:[function(require,module,exports){
+},{"./data.create":13,"./data.update":14}],16:[function(require,module,exports){
 var TileMaps = {};
 (function(name,data){
  if(typeof onTileMapLoaded === 'undefined') {
@@ -1065,4 +1153,35 @@ var TileMaps = {};
 gameWorld = TileMaps;
 module.exports = gameWorld;
 
-},{}]},{},[8]);
+},{}],17:[function(require,module,exports){
+function Physics(gameWorld) {
+  this.gameWorld = gameWorld;
+}
+
+Physics.prototype.outOfRectangle = function(rectangle, position) {
+  if (position.x >= (rectangle.x + rectangle.width) || position.x <= rectangle.x){
+      return true;
+  }
+
+  if (position.y >= (rectangle.y + rectangle.height) || position.y < rectangle.y) {
+    return true;
+  }
+
+  return false;
+}
+
+Physics.prototype.outOfGameWorld = function(position){
+  if (position.x >= (this.gameWorld.width) || position.x <= 0){
+      return true;
+  }
+
+  if (position.y >= (this.gameWorld.height) || position.y < 0) {
+    return true;
+  }
+
+  return false;
+}
+
+module.exports = Physics;
+
+},{}]},{},[9]);

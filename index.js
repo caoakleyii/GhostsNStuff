@@ -110,4 +110,12 @@ io.on('connection', function(socket) {
     players[socket.id].character.gameWorldY = data.gameWorldY;
     players[socket.id].character.currentSequence = data.currentSequence;
   });
+
+  socket.on('disconnect', function(msg){
+    console.log('player ' + socket.id +' disconneted')
+    delete players[socket.id];
+    dataUpdate.playerId = socket.id;
+    var msg = dataUpdate.encode();
+    socket.broadcast.emit('PlayerLeft', msg);
+  })
 });

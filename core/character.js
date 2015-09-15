@@ -53,8 +53,7 @@ Character = function() {
 }
 
 Character.Types =  {
-  Human : 0,
-  Ghost : 1
+  Human : 0
 };
 
 Character.Orientation = {
