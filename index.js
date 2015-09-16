@@ -65,6 +65,7 @@ io.on('connection', function(socket) {
         case character.Types.Human:
         newPlayer.character = new Human();
     }
+    newPlayer.name = createMsg.playerName;
     newPlayer.character.x = x;
     newPlayer.character.y = y;
     newPlayer.character.gameWorldX = x;
@@ -93,6 +94,7 @@ io.on('connection', function(socket) {
 
     if (p) {
       data.characterType = p.character.type;
+      data.playerName = p.name;
       data.x = p.character.x;
       data.y = p.character.y;
       data.gameWorldX = p.character.gameWorldX;

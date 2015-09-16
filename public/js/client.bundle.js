@@ -382,7 +382,8 @@ $(document).ready(function() {
     foregroundGameWorld = new PIXI.Sprite(foregroundGameWorldTexture);
     stage.addChild(foregroundGameWorld);
 
-    userSelectedCharacter();
+    $('.character-select-screen').show();
+
     animate();
   }
 
@@ -443,8 +444,10 @@ $(document).ready(function() {
   });
 
   function animate() {
-    player.inputHandler.readInput();
-    sendUpdatePlayer();
+    if (player) {
+      player.inputHandler.readInput();
+      sendUpdatePlayer();
+    }
     renderer.render(stage);
     stage.setChildIndex(foregroundGameWorld, stage.children.length - 1);
     requestAnimationFrame(animate);
@@ -461,17 +464,45 @@ $(document).ready(function() {
     socket.emit('UpdateServerPlayer', msg);
   }
 
-  function userSelectedCharacter() {
-    player = new Player(new Human());
+  $('input#txtCharacterName.form-control').on('click', function(e) {
+    e.stopPropagation();
+    console.log('test');
+    return false;
+  });
+
+  $('div .mage-class-screen').on('click', function(e) {
+    if (!$('div .mage-class-screen').hasClass('flipped')) {
+        $('.mage-class-screen').html($('.back-of-class-screen').html());
+        $('div .mage-class-screen').addClass('flipped');
+    }
+
+    if ($(e.target).is(".character-create-submit")) {
+      var playerName = $('#txtCharacterName').val();
+      showHud(playerName);
+      createMage(playerName);
+    }
+
+  });
+  function showHud(playerName){
+    $('.player-info').html(playerName);
+    $('.player-hud').show();
+  }
+  function createMage(playerName){
+    $('.character-select-screen').hide();
+    var mage = new Mage();
+    Human.call(mage);
+    player = new Player(mage);
+    player.name = playerName;
     player.character.backgroundGameWorld = backgroundGameWorld;
     player.character.foregroundGameWorld = foregroundGameWorld;
     dataCreate.characterType = character.Types.Human;
     var msg = dataCreate.encode();
     socket.emit('CreatePlayer', msg);
+    return false;
   }
 });
 
-},{"../core/character":12,"../core/data.create":13,"../core/data.update":14,"../core/data.util":15,"../core/gameWorld":16,"../core/physics":17}],6:[function(require,module,exports){
+},{"../core/character":14,"../core/data.create":15,"../core/data.update":16,"../core/data.util":17,"../core/gameWorld":18,"../core/physics":19}],6:[function(require,module,exports){
 GameObject = function() {
   this.client = true;
   this.backgroundGameWorld = undefined;
@@ -514,11 +545,6 @@ Human = function() {
   this.sprite.play();
   this.speed = 1.5;
 
-  this.skill1 = function() {
-    this.swing();
-    this.castFireball();
-  };
-
   this.swing = function() {
     if (!this.state.isAttacking) {
       this.state.isAttacking = true;
@@ -540,41 +566,7 @@ Human = function() {
     }
   };
 
-  this.castFireball = function() {
-    if (!this.state.isCasting) {
-      this.state.isCasting = true;
-      var fireball = new Fireball(this.orientation);
-      fireball.sprite.x = this.sprite.x;
-      fireball.sprite.y = this.sprite.y;
-      fireball.create(this.stage);
-    }
-  };
 }
-
-Human.prototype.create = function(stage) {
-  this.stage = stage;
-  this.stage.addChild(this.sprite);
-  this.stage.addChild(this.healthBar);
-
-  this.update();
-};
-
-Human.prototype.update = function() {
-  // advance animation
-  this.sprite.advanceTime(1/60);
-
-  // keep health bar above character
-  this.healthBar.position.x = this.sprite.position.x - (this.sprite.width / 2 - 2);
-  this.healthBar.position.y = this.sprite.position.y - 15;
-  this.width = (this.currentHP / this.totalHP) * 50;
-
-  requestAnimationFrame(this.update.bind(this));
-};
-
-Human.prototype.destroy = function() {
-  this.stage.removeChild(this.sprite);
-  this.stage.removeChild(this.healthBar);
-};
 
 Human.prototype.humanCompletedSequence = function(sprite, completed){
 
@@ -660,7 +652,7 @@ function LoadFrames(human) {
   human.sprite.loop = true;
 }
 
-},{"../core/character":12}],8:[function(require,module,exports){
+},{"../core/character":14}],8:[function(require,module,exports){
 var Character = require('../core/character');
 
 InputManager = function(character){
@@ -819,7 +811,84 @@ InputManager.prototype.walkingKeysDown = function() {
     return false;
   }
 
-},{"../core/character":12}],9:[function(require,module,exports){
+},{"../core/character":14}],9:[function(require,module,exports){
+Mage = function() {
+
+  this.skill1 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+    this.castFireball();
+  };
+
+  this.skill2 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+  this.skill3 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+  this.skill4 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+  this.skill5 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+  this.castFireball = function() {
+    if (!this.state.isCasting) {
+      this.state.isCasting = true;
+      var fireball = new Fireball(this.orientation);
+      fireball.sprite.x = this.sprite.x;
+      fireball.sprite.y = this.sprite.y;
+      fireball.create(this.stage);
+    }
+  };
+
+}
+
+
+Mage.prototype.create = function(stage) {
+  this.stage = stage;
+  this.stage.addChild(this.sprite);
+  this.stage.addChild(this.healthBar);
+  this.update();
+};
+
+Mage.prototype.update = function() {
+
+  // advance animation
+  this.sprite.advanceTime(1/60);
+
+  // keep health bar above character
+  this.healthBar.position.x = this.sprite.position.x - (this.sprite.width / 2 - 2);
+  this.healthBar.position.y = this.sprite.position.y - 15;
+  this.width = (this.currentHP / this.totalHP) * 50;
+
+  requestAnimationFrame(this.update.bind(this));
+};
+
+Mage.prototype.destroy = function() {
+  this.stage.removeChild(this.sprite);
+  this.stage.removeChild(this.healthBar);
+};
+
+},{}],10:[function(require,module,exports){
 var animatedSprite = require('./animatedSprite');
 var game = require('./game');
 var inputManager = require('./inputManager');
@@ -829,17 +898,20 @@ var player = require('./player');
 var state = require('./state');
 var clientCharacter = require('./clientCharacter');
 var human = require('./human');
+var mage = require('./mage');
+var warrior = require('./warrior');
 var extensions = require('./extensions');
 
-},{"./animatedSprite":1,"./clientCharacter":2,"./extensions":3,"./fireball":4,"./game":5,"./gameObject":6,"./human":7,"./inputManager":8,"./player":10,"./state":11}],10:[function(require,module,exports){
+},{"./animatedSprite":1,"./clientCharacter":2,"./extensions":3,"./fireball":4,"./game":5,"./gameObject":6,"./human":7,"./inputManager":8,"./mage":9,"./player":11,"./state":12,"./warrior":13}],11:[function(require,module,exports){
 Player = function(character){
   this.character = character;
+  this.name = "";
   if(character) {
     this.inputHandler = new InputManager(character);
   }
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 State = function(){
   this.isWalkingLeft = false;
   this.isWalkingRight = false;
@@ -847,7 +919,62 @@ State = function(){
   this.isWalkingDown = false;
   this.isIdling = true;
 };
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
+Warrior = function() {
+
+  this.skill1 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+
+  };
+
+  this.skill2 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+  this.skill3 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+  this.skill4 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+  this.skill5 = function() {
+    // animate character
+    this.swing();
+
+    // use skill
+  }
+
+}
+
+
+Warrior.prototype.create = function(stage) {
+  this.stage = stage;
+  this.update();
+};
+
+Warrior.prototype.update = function() {
+
+  requestAnimationFrame(this.update.bind(this));
+};
+
+Warrior.prototype.destroy = function() {
+};
+
+},{}],14:[function(require,module,exports){
 Character = function() {
   this.x = 0;
   this.y = 0;
@@ -915,11 +1042,12 @@ Character.Orientation = {
 
 module.exports = Character;
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var dataCreate = exports;
 
 (function() {
   dataCreate.playerId = undefined;
+  dataCreate.playerName = undefined;
   dataCreate.characterType = undefined;
   dataCreate.x = undefined;
   dataCreate.y = undefined;
@@ -929,9 +1057,10 @@ var dataCreate = exports;
 
 dataCreate.encode = function(){
   // msg [msgType(Create), playerId, characterType, x, y]
-  var msg = [1, this.playerId, this.characterType, this.x, this.y, this.gameWorldX, this.gameWorldY];
+  var msg = [1, this.playerId, this.playerName, this.characterType, this.x, this.y, this.gameWorldX, this.gameWorldY];
 
   this.playerId = undefined;
+  this.playerName = undefined;
   this.characterType = undefined;
   this.x = undefined;
   this.y = undefined;
@@ -940,10 +1069,11 @@ dataCreate.encode = function(){
   return msg;
 };
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var dataUpdate = exports;
 (function(){
   dataUpdate.playerId = undefined;
+  dataUpdate.playerName = undefined;
   dataUpdate.x = undefined;
   dataUpdate.y = undefined;
   dataUpdate.currentSequence = undefined;
@@ -954,8 +1084,9 @@ var dataUpdate = exports;
 
 dataUpdate.encode = function() {
   // [msgType, x, y]
-  var msg = [2, this.playerId, this.x, this.y, this.currentSequence, this.keysDown, this.gameWorldX, this.gameWorldY];
+  var msg = [2, this.playerId, this.playerName, this.x, this.y, this.currentSequence, this.keysDown, this.gameWorldX, this.gameWorldY];
   this.playerId = undefined;
+  this.playerName = undefined;
   this.x = undefined;
   this.y = undefined;
   this.currentSequence = undefined;
@@ -965,7 +1096,7 @@ dataUpdate.encode = function() {
   return msg;
 };
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var dataCreate = require('./data.create'),
     dataUpdate = require('./data.update');
 
@@ -985,25 +1116,27 @@ dataUtil.decode  = function(msg){
     case this.MessageTypes.Create:
       // msg [msgType(Create), playerId, characterType, x, y]
       dataCreate.playerId = msg[1];
-      dataCreate.characterType = msg[2];
-      dataCreate.x = msg[3];
-      dataCreate.y = msg[4];
-      dataCreate.gameWorldX = msg[5];
-      dataCreate.gameWorldY = msg[6];
+      dataCreate.playerName = msg[2];
+      dataCreate.characterType = msg[3];
+      dataCreate.x = msg[4];
+      dataCreate.y = msg[5];
+      dataCreate.gameWorldX = msg[6];
+      dataCreate.gameWorldY = msg[7];
       return dataCreate;
     case this.MessageTypes.Update:
       dataUpdate.playerId = msg[1];
-      dataUpdate.x = msg[2];
-      dataUpdate.y = msg[3];
-      dataUpdate.currentSequence = msg[4];
-      dataUpdate.keysDown = msg[5];
-      dataUpdate.gameWorldX = msg[6];
-      dataUpdate.gameWorldY = msg[7];
+      dataUpdate.playerName = msg[2];
+      dataUpdate.x = msg[3];
+      dataUpdate.y = msg[4];
+      dataUpdate.currentSequence = msg[5];
+      dataUpdate.keysDown = msg[6];
+      dataUpdate.gameWorldX = msg[7];
+      dataUpdate.gameWorldY = msg[8];
       return dataUpdate;
   }
 };
 
-},{"./data.create":13,"./data.update":14}],16:[function(require,module,exports){
+},{"./data.create":15,"./data.update":16}],18:[function(require,module,exports){
 var TileMaps = {};
 (function(name,data){
  if(typeof onTileMapLoaded === 'undefined') {
@@ -1153,7 +1286,7 @@ var TileMaps = {};
 gameWorld = TileMaps;
 module.exports = gameWorld;
 
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 function Physics(gameWorld) {
   this.gameWorld = gameWorld;
 }
@@ -1184,4 +1317,4 @@ Physics.prototype.outOfGameWorld = function(position){
 
 module.exports = Physics;
 
-},{}]},{},[9]);
+},{}]},{},[10]);

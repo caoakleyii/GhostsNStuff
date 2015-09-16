@@ -27,11 +27,6 @@ Human = function() {
   this.sprite.play();
   this.speed = 1.5;
 
-  this.skill1 = function() {
-    this.swing();
-    this.castFireball();
-  };
-
   this.swing = function() {
     if (!this.state.isAttacking) {
       this.state.isAttacking = true;
@@ -53,41 +48,7 @@ Human = function() {
     }
   };
 
-  this.castFireball = function() {
-    if (!this.state.isCasting) {
-      this.state.isCasting = true;
-      var fireball = new Fireball(this.orientation);
-      fireball.sprite.x = this.sprite.x;
-      fireball.sprite.y = this.sprite.y;
-      fireball.create(this.stage);
-    }
-  };
 }
-
-Human.prototype.create = function(stage) {
-  this.stage = stage;
-  this.stage.addChild(this.sprite);
-  this.stage.addChild(this.healthBar);
-
-  this.update();
-};
-
-Human.prototype.update = function() {
-  // advance animation
-  this.sprite.advanceTime(1/60);
-
-  // keep health bar above character
-  this.healthBar.position.x = this.sprite.position.x - (this.sprite.width / 2 - 2);
-  this.healthBar.position.y = this.sprite.position.y - 15;
-  this.width = (this.currentHP / this.totalHP) * 50;
-
-  requestAnimationFrame(this.update.bind(this));
-};
-
-Human.prototype.destroy = function() {
-  this.stage.removeChild(this.sprite);
-  this.stage.removeChild(this.healthBar);
-};
 
 Human.prototype.humanCompletedSequence = function(sprite, completed){
 

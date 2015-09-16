@@ -1,17 +1,68 @@
 <html>
-  <head>
-    <title> Monster </title>
-    <link rel="stylesheet" href="css/site.css" type="text/css" />
-    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script type="text/javascript" src="js/pixi.min.js"> </script>
-    <script type="text/javascript" src="js/client.bundle.js"> </script>
-  </head>
+<head>
+  <title> Riab </title>
 
-  <body>
-    <h1> Monster </h1>
-      <div id="canvasDiv">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" type="text/css"/>
+  <link rel="stylesheet" href="css/site.css" type="text/css" />
+  <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/pixi.min.js"> </script>
+  <script type="text/javascript" src="js/client.bundle.js"> </script>
+</head>
 
+<body>
+  <h1> Project Riab </h1>
+  <div id="canvasDiv">
+    <div class="gui-container">
+      <div class="gui-centered-row row">
+
+        <!-- Character Select Screen -->
+        <div class="character-select-screen">
+          <div class="ranger-class-screen class-select-option col-md-4">
+            <h2> Ranger  </h2>
+            <br>
+            <br>
+            <p> Coming Soon! </p>
+          </div>
+          <div class="warrior-class-screen class-select-option col-md-4">
+            <h2>Warrior</h2>
+            <br>
+            <br>
+            <p>
+              Is able to supports with high defense, close combat and survivability.
+            </p>
+          </div>
+          <div class="mage-class-screen class-select-option col-md-4">
+            <h2>Mage</h2>
+            <br>
+            <br>
+            <p>
+              Is able to supports with healing skills, far range damage and utiltiy support skills.
+            </p>
+          </div>
+
+          <div class="back-of-class-screen">
+            <form class="character-create form-inline" onsubmit="return false;">
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon btn btn-primary">IGN</div>
+                  <input type="text" class="form-control" id="txtCharacterName" placeholder="Name">
+                  <span class="input-group-btn "><button type="button" class="btn btn-primary character-create-submit">Submit</button></span></div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- In Game HUD -->
+          <div class="player-hud">
+            <div class="player-info pull-left">    </div>
+
+
+            <div class="player-skills"> </div>
+          </div>
+        </div>
       </div>
+    </div>
   </body>
   </html>

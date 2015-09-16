@@ -2,6 +2,7 @@ var dataCreate = exports;
 
 (function() {
   dataCreate.playerId = undefined;
+  dataCreate.playerName = undefined;
   dataCreate.characterType = undefined;
   dataCreate.x = undefined;
   dataCreate.y = undefined;
@@ -11,9 +12,10 @@ var dataCreate = exports;
 
 dataCreate.encode = function(){
   // msg [msgType(Create), playerId, characterType, x, y]
-  var msg = [1, this.playerId, this.characterType, this.x, this.y, this.gameWorldX, this.gameWorldY];
+  var msg = [1, this.playerId, this.playerName, this.characterType, this.x, this.y, this.gameWorldX, this.gameWorldY];
 
   this.playerId = undefined;
+  this.playerName = undefined;
   this.characterType = undefined;
   this.x = undefined;
   this.y = undefined;

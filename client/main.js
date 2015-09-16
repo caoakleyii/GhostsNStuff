@@ -7,4 +7,6 @@ var player = require('./player');
 var state = require('./state');
 var clientCharacter = require('./clientCharacter');
 var human = require('./human');
+var mage = require('./mage');
+var warrior = require('./warrior');
 var extensions = require('./extensions');

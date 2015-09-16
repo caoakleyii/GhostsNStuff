@@ -48,7 +48,8 @@ $(document).ready(function() {
     foregroundGameWorld = new PIXI.Sprite(foregroundGameWorldTexture);
     stage.addChild(foregroundGameWorld);
 
-    userSelectedCharacter();
+    $('.character-select-screen').show();
+
     animate();
   }
 
@@ -109,8 +110,10 @@ $(document).ready(function() {
   });
 
   function animate() {
-    player.inputHandler.readInput();
-    sendUpdatePlayer();
+    if (player) {
+      player.inputHandler.readInput();
+      sendUpdatePlayer();
+    }
     renderer.render(stage);
     stage.setChildIndex(foregroundGameWorld, stage.children.length - 1);
     requestAnimationFrame(animate);
@@ -127,12 +130,40 @@ $(document).ready(function() {
     socket.emit('UpdateServerPlayer', msg);
   }
 
-  function userSelectedCharacter() {
-    player = new Player(new Human());
+  $('input#txtCharacterName.form-control').on('click', function(e) {
+    e.stopPropagation();
+    console.log('test');
+    return false;
+  });
+
+  $('div .mage-class-screen').on('click', function(e) {
+    if (!$('div .mage-class-screen').hasClass('flipped')) {
+        $('.mage-class-screen').html($('.back-of-class-screen').html());
+        $('div .mage-class-screen').addClass('flipped');
+    }
+
+    if ($(e.target).is(".character-create-submit")) {
+      var playerName = $('#txtCharacterName').val();
+      showHud(playerName);
+      createMage(playerName);
+    }
+
+  });
+  function showHud(playerName){
+    $('.player-info').html(playerName);
+    $('.player-hud').show();
+  }
+  function createMage(playerName){
+    $('.character-select-screen').hide();
+    var mage = new Mage();
+    Human.call(mage);
+    player = new Player(mage);
+    player.name = playerName;
     player.character.backgroundGameWorld = backgroundGameWorld;
     player.character.foregroundGameWorld = foregroundGameWorld;
     dataCreate.characterType = character.Types.Human;
     var msg = dataCreate.encode();
     socket.emit('CreatePlayer', msg);
+    return false;
   }
 });
